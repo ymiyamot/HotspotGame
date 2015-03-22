@@ -1,0 +1,77 @@
+<!doctype html>
+<!-- 
+  The consent.html displays the text of your IRB-approved
+  consent form.  Even if you are not required to provide
+  a consent form, it is helpful to use this form to 
+  describe what people can do if an error comes up, etc...
+
+-->
+<html>
+    <head>
+        <title>Psychology Experiment - Informed Consent Form</title>
+        <link rel=stylesheet href="/static/css/bootstrap.min.css" type="text/css">
+        <link rel=stylesheet href="/static/css/style.css" type="text/css">
+        <script type="text/javascript">
+            function onexit() {
+              self.close(); // no harm, no foul here
+            }
+        </script>
+    </head>
+    <body>
+        <div id="container-consent">
+            <div id="consent">
+                <h1>We need your consent to proceed</h1>
+                <hr>
+                <div class="legal well">
+                    <p>
+                    You have been invited to take part in a research study named BLAH BLAH
+                    </p>
+                    <p>
+<h2> Hotspot Search Task </h2>
+You are about to participate in an experiment by the Harvard Neuromotor Lab. Your contribution to our research allows us to learn more about human decision-making patterns. 
+Please read the following information carefully before proceeding.
+<h3> Why we are doing this research: </h3> We want to understand how people make trial & error decisions.
+What you will have to do: You will search for an invisible hotspot on the screen, guided by “hot” or “cold” feedback.  Refusal to participate will involve no penalty.
+<h3> Potential risks: </h3> There are no risks anticipated in taking part in this study and you are free to leave at any time by clicking the “I’ve had enough! Pay me.” button located at the bottom right-hand corner of the browser window.
+<h3> Privacy: </h3> Your responses will be kept anonymous. We do not collect information that could be used to directly establish your identity.
+Duration:  
+•	2 minutes for a short tutorial on the hotspot game and a small quiz to test knowledge of the rules. 
+•	0 to 30 additional minutes for an extended bonus segment (pay by performance), following successful completion of tutorial and quiz.
+<h3> Benefits: </h3> There are no direct health-related or educational benefits for participating in this study.
+<h3> Compensation: </h3> 
+•	$0.15 for completing the initial tutorial and quiz.
+•	$7.25/hour pay rate (approximate) for completing the extended bonus segment (about 30 minutes). This pay rate is made up of $0.01~0.05 for every additional hotspot game played during this segment (based on performance), and an additional “completion bonus” of up to $1.00 for completing the entirety of the experiment.
+•	Payment will be administered through Amazon Mechanical Turk’s payment system.
+To contact the researcher: If you have questions or concerns about this research, please contact Yohsuke Miyamoto, Room 402, 60 Oxford St, Cambridge, MA 02138, yrm@seas.harvard.edu. 
+Whom to contact about your rights in this research, for questions, concerns, suggestions, or complaints that are not being addressed by the researcher, or research-related harm: Committee on the Use of Human Subjects in Research at Harvard University, 1414 Massachusetts Avenue, Second Floor, Cambridge, MA 02138. Phone: 617-496-2847 (CUHS). Email: cuhs@fas.harvard.edu
+By clicking the “I agree” button below, you confirm that you have read and understood the above and agree to take part in this research. Your participation is voluntary and you are free to leave the experiment at any time by simply closing the web browser. 
+
+
+                    </p>
+
+                    <button type="button" class="btn btn-default btn-sm" onClick="window.print();">
+                    <span class="glyphicon glyphicon-print"></span> Print a copy of this
+                    </button>
+                </div>
+
+                <hr>
+                <h4>Do you understand and consent to these terms?</h4>
+                <br>
+
+                <center>
+                    <button type="button" class="btn btn-primary btn-lg" onClick="window.location='/exp?hitId={{ hitid }}&assignmentId={{ assignmentid }}&workerId={{ workerid }}'">
+                    <span class="glyphicon glyphicon-ok"></span> I agree 
+                    </button>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                    <button type="button" class="btn btn-danger btn-lg" onClick="onexit()">
+                    <span class="glyphicon glyphicon-ban-circle"></span> No thanks, I do not want to do this HIT
+                    </button>
+                </center>
+
+            </div>
+        </div>
+    </body>
+</html>
+

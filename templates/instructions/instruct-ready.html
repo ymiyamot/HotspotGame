@@ -1,0 +1,93 @@
+<svg id="mySvg" width="80" height="80">
+    <defs id="mdef">
+        <pattern id="image" x="0" y="0" height="40" width="40">
+            <image x="-2" y="0" width="96" height="96" xlink:href="{{ server_location }}/static/images/quarter2.jpeg"></image>
+        </pattern>
+    </defs>
+        
+<div id="container-instructions">
+
+    <h1>Screen calibration</h1>
+
+    <hr>
+
+    <div class="instructions well">
+
+        <p>
+        IMPORTANT. Before you begin the task, please: <br> (1) maximize the size of this window <br> (2) match the size of the following image of a US quarter to the size of an actual US quarter by adjusting the zoom of your browser's magnification.
+        </p>
+        
+        <!--
+        <p>
+        To adjust the magnification of your browser window:
+        <br> Chrome: View -> Zoom in/Zoom out
+        <br> Firefox: View -> Zoom -> Zoom in/Zoom out
+        <br> Internet Explorer: ENTER SOMETHING HERE
+        </p>
+         -->
+
+
+        <script type="text/javascript">
+            var w = 150;
+            var h = 150;
+            // Prepare the main canvas
+			mainSvg = d3.select(".well")
+            .append("svg:svg")
+            .attr("width", w)
+            .attr("height", h)
+            .style("fill", "black")
+            .style("display", "block")
+            .style("margin", "auto");
+            
+            // Draw quarter size
+            var quarterR = 47
+            quarter = mainSvg.append("circle")
+            .style("fill", "url(#image)")
+            .attr("cx", w/2)
+            .attr("cy", h/2)
+            .attr("r", quarterR);
+            
+            // Function for outputting line string
+            line2 = d3.svg.line().x(function (d) {return d[0];})
+            .y(function(d) {return d[1];});
+            
+            // Draw a line with length of the quarter diameter
+            ruler = mainSvg.append("path")
+            .attr("d", line2([[w/2 - quarterR, h/2 + quarterR + h / 7.5], [w/2 + quarterR, h/2 + quarterR + h / 7.5]]))
+            .style("stroke", "black")
+            .style("stroke-width", 3);
+
+            rulerText = mainSvg.append("text")
+            .text("24.26mm")
+            .attr("x", w/2 - w * 34 / 150)
+            .attr("y", h/2 + quarterR + h / 10);
+            
+        //console.log(psiTurk.getInstructionIndicator())
+        </script>
+
+    </div>
+
+    <hr>
+
+    <div class="instructionsnav">
+        <div class="row">
+            <div class="col-xs-2">
+            	<!--  Maybe not previous button on this screen? -->
+                <button type="button" id="next" value="next" class="btn btn-primary btn-lg previous">
+                <span class="glyphicon glyphicon-arrow-left"></span> Previous
+                </button>
+            </div>
+            <div class="col-xs-8">
+            	<center>
+	                <button type="button" id="next" value="next" class="btn btn-success btn-lg continue">
+	                Begin experiment <span class="glyphicon glyphicon-arrow-right"></span>
+	                </button>
+	            </center>
+            </div>
+            <div class="col-xs-2">
+
+            </div>
+        </div>
+    </div>
+
+</div>

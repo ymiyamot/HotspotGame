@@ -1,0 +1,40 @@
+                div.bar {
+                    display: inline-block;
+                    width: 20px;
+                    height: 75px;   /* We'll override this later */
+                    background-color: teal;
+                        margin: 2px;
+                }
+                .axis {
+                  shape-rendering: crispEdges;
+                }
+                *{cursor: none}
+                .x.axis line {
+                  stroke: lightgrey;
+                }
+
+                .x.axis .minor {
+                  stroke-opacity: .5;
+                }
+
+                .x.axis path {
+                  display: none;
+                }
+
+                .y.axis line, .y.axis path {
+                  fill: none;
+                  stroke: #000;
+                }
+                
+                .arrow {
+                    stroke: #666;
+                    stroke-width: 4px;
+                }
+                #arrow {
+                    fill: #666;
+                }
+                
+                .performance {
+                    stroke: rgb(0, 255, 0);
+                    fill: green;
+                }

@@ -1,0 +1,1423 @@
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>TargetFind</title>
+        <script type="text/javascript" src="libs/d3.v3.min.js"></script>
+        <script type="text/javascript" src="libs/jquery-1.10.2.min.js"></script>
+        <script type="text/javascript" src="libs/seedrandom.min.js"></script>
+    </head>
+
+	<audio id="click1" src="/static/audio/click1.mp3" preload="auto"></audio>
+	<audio id="click2" src="/static/audio/click2.mp3" preload="auto"></audio>
+    <audio id="click3" src="/static/audio/click_one.wav" preload="auto"></audio>
+	<audio id="click4" src="/static/audio/mouseclick2.wav" preload="auto"></audio>
+    <audio id="chime" src="/static/audio/chime.wav" preload="auto"></audio>
+
+    <link rel=stylesheet href="/static/css/gamestyles.css" type="text/css">
+	
+	<body>
+		<script type="text/javascript">
+
+		// Initialize global variables
+		var w = 700;
+		var h = 700;
+
+		var scorefntsz = 40;
+        var tutorialFontSz = 16;
+        var statfntsz = 15;
+		
+        var currpt;
+		
+		var endblock = false;
+		var dist = new Array();
+		var scores = new Array();
+		var endpt = new Array();
+        var handpt = new Array();
+		var times = new Array();
+        var updateTimes = new Array();
+        var stepSizes = new Array();
+        var stepCenters = new Array();
+		var finalscore_rec = new Array();
+		var prevpts = new Array();
+		var smallstep = 5;
+//		var bigstep = 20;
+        var bigstep = 20 / 900 * 700;  // adjust for the smaller task radius
+		var grandtrialnum = 0;
+        var moneyCount = 0.00;
+        var currentEarned = 0;
+        
+		// Session variables to retrieve and record
+		var finalScore = 0;
+		var SessStartTime = 0;
+		var SessTotalTime = 0;
+		var totaltrials = 5;
+        
+        // Tutorial-use variables
+        var tutorialMode = 1;  // 0 means no tutorial, 1+ is a different stage of tutorial
+//        var tutorialMode = 0;
+        var numTutTextLines = 7;  // Number of text lines allowed in blurb
+        var blinkVar = 0;
+        var numRounds_tut = 3;
+        var waitFlag1500 = 0;
+        var clickOutEvent = 0;
+        var clickCenterEvent = 0;
+        
+        // tutorial blurbs
+        var tutText = new Array();
+
+        // tutorialMode == 0
+        tutText.push(["Your task is to find the hotspot, hidden in this black circle.",
+                    "Use the scores to place your moves as close to it as possible."]);
+                    
+        // tutorialMode == 1
+        tutText.push(["To start the game, place your first move by clicking the very center."]);
+        
+        // tutorialMode == 2
+        tutText.push([""]);
+        
+        // tutorialMode == 3
+        tutText.push(["Great. See the cloud of red dots? The more dots you see, ",
+                      "the closer your move was to the hotspot."]);
+                      
+        // tutorialMode == 4
+        tutText.push(["Now let's see how the dots change on your next move.",
+                      "Notice the white circle: you can place your move anywhere within it."]);
+                      
+        // tutorialMode == 5
+        tutText.push(["Note how the bright green pointer never moves beyond the white circle.",
+                    "You may place your move on the edge, but not beyond. Don't worry–the white circle",
+                      "will update after each move so that you can explore farther areas."]);
+                      
+        // tutorialMode == 6
+        tutText.push(["Make your next move by controlling the bright green pointer.",
+                      "As you click, watch the dots closely to see if anything changes!"]);
+
+        // tutorialMode == 7
+        tutText.push([""]);
+
+        // tutorialMode == 8
+        tutText.push(["Did you notice that some dots disappeared?  This means",
+                      "that your 2nd move was farther away from the hotspot.",
+                      "Use this information to get closer to the hotspot!"]);
+                    
+        // tutorialMode == 9
+        tutText.push(["Did you notice that more dots appeared?  This means",
+                      "that your 2nd move was closer to the hotspot. Keep this up!"]);
+
+        // tutorialMode == 10
+        tutText.push([""]);
+
+        // tutorialMode == 11
+        tutText.push(["This is the end of the round. Each round ends after",
+                    "a small number of moves, even if you don't reach the hotspot.",
+                    "Some rounds may have fewer moves than others."]);
+
+        // tutorialMode == 12
+        tutText.push(["Let's see how you performed this round."]);
+        
+        // tutorialMode == 13
+        tutText.push(["This red circle is where the hotspot was this round."]);
+        
+        // tutorialMode == 14
+        tutText.push(["This green line is the path you took to get to it."]);
+
+        // tutorialMode == 15
+        tutText.push(["This percentage is the rating we gave you",
+                      "based on how efficiently you approached the hotspot."]);
+                      
+        // tutorialMode == 16
+        tutText.push(["Try your best! You may get bonus money for higher ratings,",
+                      "and a scoreboard will show how your performance compares",
+                      "to other workers, at the very end of the task!"]);
+                      
+        // tutorialMode == 17
+        tutText.push(["Click again to move on to the next round!",
+                      "The hotspot will be reset to a new location.",
+                      "Complete a few rounds successfully on your own to exit the tutorial!"]);
+
+        // tutorialMode == 18
+        tutText.push(["Great!  Receive $0.10 for concluding the tutorial.",
+                      "Now play the hotspot game for real!"]);
+                      
+        // tutorialMode == 19
+        tutText.push(["Maybe we need more practice before we start.",
+                      "Let's try to the tutorial one more time!"]);
+
+
+        // Event triggered text (20 & 21)
+        tutText.push(["Remember that the first move always starts in the center!"]);
+        tutText.push(["Just a reminder: you can click outside the white circle,",
+                      "but your move will be placed at the bright green pointer,",
+                      "which always stays inside the white circle."]);
+                      
+
+
+			
+		// Event variables to retrieve and record
+		var refpt = new Array(); 
+		var ringinfo = new Array();
+		
+        var nRounds = 2;
+		var defR = w/2; // Default Border Radius
+		var dotRwdInnerR = 0;
+		var dotRwdOuterR = 50;
+		var minidotsz = 1; // size of reward dots
+		var wait_time = 1000;
+        var dotDelay = 450;
+        var gradMin = 15; // minimum gradient allowed
+        var gradMax = 75; // maximum gradient allowed
+        var grad = 0;  // score gradient
+        var d0 = 0;  // initial distance to hotspot
+        var score0 = 200; // initial number of dots
+        var scoreMax = 0;
+        var numDots = 0;
+        var minTrials = 4;
+        var maxTrials = 11;
+        
+		var lastupdatetime = 0;
+		var trans_time = 150;
+		var visupdated = true;
+        var gameEnd = 0;
+
+        // Function for drawing  from a normal distribution
+		Math.nrand = function() {
+			var x1, x2, rad, y1;
+			do {
+				x1 = 2 * this.random() - 1;
+				x2 = 2 * this.random() - 1;
+				rad = x1 * x1 + x2 * x2;
+			} while(rad >= 1 || rad == 0);
+			var c = this.sqrt(-2 * Math.log(rad) / rad);
+			return x1 * c;
+		};
+        
+        // Function for calculating sum of array.
+        Math.sum = function(vec) {
+            total = 0;
+            for (var i = 0; i < vec.length; i++) {
+                total = total + vec[i];
+            }
+            return total;
+        }
+        
+        // Function for calculating mean of array.
+        Math.mean = function(vec) {
+            return Math.sum(vec) / vec.length;
+        }
+
+		// Function for drawing from a circular uniform distribution
+		function circUnif(centX, centY, minR, boundR, numsamps) {
+			var allsamps = new Array();
+			var xsamp = 0;
+			var ysamp = 0;
+			for (var i = 1; i <= numsamps; i++) {
+				var rsamp = boundR + 1;
+				while (rsamp > boundR | rsamp < minR) {
+					xsamp = Math.round(Math.random() * 2 * boundR) - boundR;
+					ysamp = Math.round(Math.random() * 2 * boundR) - boundR;
+					rsamp = Math.sqrt(Math.pow(xsamp,2) + Math.pow(ysamp,2));
+				}	
+				allsamps.push([xsamp + centX, ysamp + centY]);	
+			} 			
+			return allsamps;
+		}
+
+		function BlockReset() {
+
+			// Reset sound
+            if (tutorialMode != 1) {
+                play_multi_sound('click1');
+            }
+            
+			// Reset records
+			refpt.length = 0;
+			ringinfo.length = 0;
+			prevpts.length = 0;
+			dist.length = 0;
+			endpt.length = 0;
+            handpt.length = 0;
+			scores.length = 0;
+			times.length = 0;
+            updateTimes.length = 0;
+            stepSizes.length = 0;
+            stepCenters.length = 0;
+			trialnum = 1;
+            
+
+
+
+            
+            // Increment round number
+            if (tutorialMode == 0) {
+                grandtrialnum = grandtrialnum + 1;
+                
+                // Update display
+                graphics.mainSvg.selectAll("#roundNum").text("Round " + grandtrialnum + "/" + nRounds);
+                
+            }else {
+                
+                // Display the tutorial round number
+                tutNum = finalscore_rec.length + 1;
+                graphics.mainSvg.selectAll("#roundNum").text("Round T" + tutNum);
+                
+                // Introduce tutorial if starting tutorial
+                if (tutorialMode == 1) {
+                    writeBlurb(w / 5, h * 4 / 10, tutText[tutorialMode - 1], graphics, "(click to continue)", 0);
+                }
+            }
+            
+            
+            // Draw a random number of moves (trials)
+            if (tutorialMode == 1) {
+                // In the first round of the tutorial mode, fix the number of moves.
+                totaltrials = 6;
+            }else if (tutorialMode > 0) {
+                // In subsequent tutorial rounds, set the number of moves
+                // from 6 to 10
+                totaltrials = Math.floor(Math.random() * 5) + 6;
+            }else {
+                // trials from 4 to 11
+                totaltrials = Math.floor(Math.random() * (maxTrials - minTrials) + 1) + minTrials;
+            }
+            
+            // Draw a random hotspot location
+            rsampxy = circUnif(w/2, h/2, 0, defR, 1)
+            for (var i = 1; i <= totaltrials; i++) {
+				refpt.push(rsampxy[0])
+				ringinfo.push([w/2, h/2, defR]);
+			}
+
+            // Draw a new score gradient
+            grad = (gradMax - gradMin) * Math.random() + gradMin;
+            grad = 45;
+            // Calculate initial distance to hotspot
+            d0 = Math.sqrt(Math.pow((refpt[0][0] - ringinfo[0][0]), 2) + Math.pow((refpt[0][1] - ringinfo[0][1]), 2));
+
+            // Calculate max score, which is the maximum number of dots
+            scoreMax = score0 + grad * Math.min(maxTrials, d0 / bigstep);
+            numDots = Math.round(scoreMax);
+            
+
+            // Seed the random generator, then generate dot locations
+            // and ensure that there are no overlapping dots
+            rSeed = 'hello.';
+            Math.seedrandom(rSeed);
+			rwddots = circUnif(0, 0, dotRwdInnerR, dotRwdOuterR, 2 * numDots);
+            rwddots.sort();
+            var dupl = new Array();
+            for (var i = 0; i < rwddots.length - 1; i++) {
+                dupl.push((rwddots[i][0] == rwddots[i + 1][0] & rwddots[i][1] == rwddots[i + 1][1]))
+            }
+            rwddots = rwddots.filter(function(d, i) {return !dupl[i];});
+            rwddots.sort(function() {return 0.5 - Math.random()});
+            rwddots = rwddots.slice(0, numDots);
+            
+            // Record to check the reproducibility of random dots
+            rDotStartX = rwddots[0][0];
+            rDotEndY = rwddots[rwddots.length - 1][1];
+            
+            
+            // Reset graphics
+            console.log(ringinfo[trialnum-1][2])
+            console.log(graphics.taskSpace.attr("r"))
+			graphics.taskSpace.attr("r", ringinfo[trialnum-1][2])
+			graphics.truetarg.attr("r", 0);
+			graphics.finalpt.attr("r", 0);
+			graphics.stats1.text("");
+			graphics.fullpath.attr("stroke-width", 0);
+			graphics.scoredisp.text("");
+
+            // Draw new dots
+			graphics["newdots"] = graphics.dotDisplay.data(rwddots.slice(0, 0))
+				.enter().append("rect")
+                .attr("class", "score")
+				.attr("width", 0)
+				.attr("height", 0)
+				.attr("x", function(d) {return d[0];})
+				.attr("y", function(d) {return d[1];});
+
+            // Reset the task space size
+			graphics.taskSpace.attr("r",ringinfo[trialnum-1][2]);
+            
+            // Reset the step area size
+			graphics.steparea1.attr("cx", w/2)
+				.attr("cy", h/2)
+				.attr("r", smallstep);
+		}
+
+		function InitDraw() {
+
+
+			// Prepare the main canvas
+			var mainSvg = d3.select("body")
+                .append("svg:svg")
+                .attr("width", w)
+                .attr("height", h)
+                .attr("pointer-events", "all")
+                .on("mousemove", mousemove)
+                .on("mousedown", mousedown)
+                .on("mouseup", mouseup);
+                
+
+			// Draw dot pattern plate
+			dotScoreDisp = mainSvg.append("circle")
+                .style("fill", "black")
+                .attr("cx", w/2)
+                .attr("cy", h/2)
+                .attr("r", dotRwdOuterR);
+
+			dotDisplay = mainSvg.selectAll(".score");
+            
+			
+            // Draw task space
+			taskSpace = mainSvg.append("circle")
+            .style("stroke","gray")
+            .style("fill","black")
+            .attr("cx",w/2)
+            .attr("cy",h/2)
+            .on("mouseover", function() {
+                });
+            
+
+			steparea1 = mainSvg.append("circle")
+				.style("fill","black")
+				.style("stroke", "gray")
+				.on("mouseover", function(){
+				});
+
+            // CURRENTLY NOT USED
+            steparea2 = mainSvg.append("circle")
+                .attr("cx",w/2)
+                .attr("cy",h/2)
+                .attr("r",0)
+                .style("fill","white")
+                .on("mouseover", function(){
+                    taskSpace.style("fill","black");
+                })
+                .on("mouseout", function(){
+                    taskSpace.style("fill","gray");
+                });
+            steparea3 = mainSvg.append("polygon")
+                .style("fill","white")
+                .attr("points",[[0,0]])
+                .on("mouseover", function(){
+                    taskSpace.style("fill","black");
+                })
+                .on("mouseout", function(){
+                    taskSpace.style("fill","gray");
+                });
+            
+
+            // Draw the border of the dot reward
+            arc = d3.svg.arc()
+            .innerRadius(dotRwdInnerR)
+            .outerRadius(dotRwdOuterR)
+            .startAngle(0)
+            .endAngle(2 * Math.PI);
+            
+			scoreDonut = mainSvg.append("path")
+				.attr("d", arc)
+				.attr("transform", "translate(" + w/2 + "," + h/2 + ")")
+				.attr("fill", d3.rgb(10, 10, 10))
+				.style("stroke", "red")
+                .style("stroke-width", 0.25)
+				.style("fill-opacity", 0);
+                
+
+            // Create light green pointer (hand location)
+            pointerHand = mainSvg.append("circle")
+                .attr("cx", w/2)
+                .attr("cy", h/2)
+                .attr("r", 2)
+                .style("fill", "rgb(30,100,30)")
+                .on("mouseover", function() {
+                    });
+
+
+            // Create green pointer (click location)
+			pointer = mainSvg.append("circle")
+				.attr("cx", w/2)
+				.attr("cy", h/2)
+				.attr("r", 2)
+				.style("fill", "rgb(0,255,0)")
+				.on("mouseover", function() {
+				});
+            
+
+            // Create a line connecting both pointers
+			pointerstring = mainSvg.append("line")
+				.attr("stroke-width", 0)
+				.attr("stroke","green")
+				.style("stroke-dasharray", ("3, 3"));
+
+
+            // Draw the true hotspot location
+			truetarg = mainSvg.append("circle")
+				.attr("r", 0)
+				.style("fill",d3.rgb(200, 0, 0));
+
+
+            // Draw the final click position of the round
+			finalpt = mainSvg.append("circle")
+				.style("fill",d3.rgb(0,200,0));
+
+
+            // Draw the click path taken in this round
+            fullpath = mainSvg.append("svg:path")
+            .attr("stroke","rgb(0, 150, 0)")
+            .attr("fill","none");
+
+            // Write performance score of round
+			stats1 = mainSvg.append("text")
+                .attr("class", "performance")
+				.attr("text-anchor","middle")
+				.attr("fill",d3.rgb(200,175,7))
+                .attr("font-size","24px");
+                
+                
+
+            // define arrowhead marker for drawing arrows
+            mainSvg.append("defs").append("marker")
+                .attr("id", "arrowhead")
+                .attr("refX", 0)
+                .attr("refY", 2)
+                .attr("markerWidth", 6)
+                .attr("markerHeight", 4)
+                .attr("orient", "auto")
+                .attr("fill", "yellow")
+                .append("path")
+                .attr("d", "M 0,0 V 4 L6,2 Z");
+
+			// Write numerical score if needed
+			scoredisp = mainSvg.append("text")
+				.text("Score: ")
+				.attr("font-size",scorefntsz+"px")
+				.attr("text-anchor","middle")
+				.attr("fill",d3.rgb(0,255,0));
+                
+            // User display information
+            userDisp = new Array();
+            userDisp.push(mainSvg.append("text")
+                .attr("font-size", 24 + "px")
+                .attr("text-anchor", "middle")
+                .attr("fill", "white")
+                .attr("x", w / 2)
+                .attr("y", h / 14));
+                
+            if (tutorialMode > 0) {
+                userDisp[0].text("Tutorial Mode");
+            }else {
+                userDisp[0].text("");
+            }
+            
+            // For trial #
+            userDisp.push(mainSvg.append("text")
+                .text("Round 1")
+                .attr("id", "roundNum")
+                .attr("font-size", statfntsz + "px")
+                .attr("text-anchor", "left")
+                .attr("fill", "gray")
+                .attr("x", w / 28)
+                .attr("y", h / 28));
+                
+            // For total amount earned
+            userDisp.push(mainSvg.append("text")
+                .text("$0.00 earned")
+                .attr("id", "totalEarned")
+                .attr("font-size", statfntsz + "px")
+                .attr("text-anchor", "left")
+                .attr("fill", "gray")
+                .attr("x", w / 28)
+                .attr("y", h / 14));
+                
+            // For amount earned in current round
+            userDisp.push(mainSvg.append("text")
+                .attr("id", "currentEarned")
+                .attr("font-size", 18 + "px")
+                .attr("text-anchor", "left")
+                .attr("fill", "green")
+                .attr("x", w / 28)
+                .attr("y", h * 3 / 28));
+            
+            tutorialArrow = mainSvg.append("path")
+                .attr("opacity", 0)
+                .attr("stroke","yellow")
+                .attr("stroke-width", 5)
+                .attr("marker-end", "url(#arrowhead)")
+                .attr("transform", function(d) {return "translate(" + 0 + "," + 0 + ")"});
+                
+
+
+
+			return {pointer : pointer, pointerHand : pointerHand, pointerstring : pointerstring, dotDisplay : dotDisplay,
+				mainSvg : mainSvg, taskSpace : taskSpace, scoredisp : scoredisp,
+				scoreDonut : scoreDonut,  dotScoreDisp : dotScoreDisp,
+				steparea1 : steparea1, steparea2 : steparea2, steparea3 : steparea3,
+				truetarg : truetarg, finalpt : finalpt, stats1 : stats1, fullpath : fullpath,
+                tutorialArrow : tutorialArrow,
+                userDisp : userDisp};
+		}
+
+		InitAudio();
+		graphics = InitDraw();
+		BlockReset();
+
+        ///////////// Tutorial-use functions /////////////
+
+        // Running this function in conjunction with setInterval will blink the yellow tutorial arrow
+        function blinkArrow(blinkObj) {
+            
+            blinkObj.transition()
+                .attr("opacity", 0);
+            blinkObj.transition()
+                .delay(250)
+                .attr("opacity", 1);
+            console.log("Blink");
+        }
+        
+        // Function for setting location of arrow
+        function placeArrow(x, y) {
+            var arrowHeadLen = 33;  // length of the arrowhead
+            var arrowLen = 30;
+            
+            // Draw arrow for tutorial
+            lineFunc = d3.svg.line()
+                .x(function(d) {return d[0];})
+                .y(function(d) {return d[1];});
+            
+            console.log([x, y, arrowLen, arrowHeadLen,
+                         x + arrowLen + (arrowHeadLen / Math.sqrt(2)),
+                         x - arrowLen - (arrowHeadLen / Math.sqrt(2)),
+                         y + (arrowHeadLen / Math.sqrt(2)),
+                         y - (arrowHeadLen / Math.sqrt(2))])
+            graphics.tutorialArrow.attr("d", function(d) {
+                                        return lineFunc([[x + arrowLen + (arrowHeadLen / Math.sqrt(2)), y - arrowLen - (arrowHeadLen / Math.sqrt(2))], [x + (arrowHeadLen / Math.sqrt(2)), y - (arrowHeadLen / Math.sqrt(2))]])
+                                        });
+        }
+        
+        // Function for writing blurbs. Input is an array of strings.
+        function writeBlurb(x, y, blurbStrings, graphics, suppText, delay) {
+            // tutorial sound
+            setTimeout(function(){play_multi_sound('chime')}, delay);
+
+            
+            // Draw a mask for when displaying tutorial text
+            graphics.tutorialMask = graphics.mainSvg.append("rect")
+                .transition()
+                .delay(delay)
+                .attr("width", w)
+                .attr("height", h)
+                .attr("class", "tutorialMask")
+                .attr("x", 0)
+                .attr("y", 0)
+                .style("fill", "rgb(0, 0, 0)")
+                .attr("opacity", 0.6)
+            
+
+            // Draw tutorial text
+            graphics.tutorialText = writeBlurbSubfun(x, y, blurbStrings, graphics.mainSvg, 0, 0);
+
+            // Draw border of tutorial text
+            var cornerX = x - 15;
+            var cornerY = y - 25;
+
+            textWids = graphics.mainSvg.selectAll("#tutorialText")[0].map(function(d) {return d.getBBox().width});
+            textHeis = graphics.mainSvg.selectAll("#tutorialText")[0].map(function(d) {return d.getBBox().height});
+            var maxXLen = Math.max.apply(null, textWids) + 30;
+            var maxYLen = textHeis.reduce(function(a, b) {return a + b}) + 20;
+
+            graphics.tutorialBox = graphics.mainSvg.append("svg:path")
+                .attr("stroke", "yellow")
+                .attr("fill", "rgb(70, 70, 70)");
+            
+            line2 = d3.svg.line().x(function (d) {return d[0];})
+            .y(function(d) {return d[1];});
+            graphics.tutorialBox.transition()
+                .delay(delay)
+                .attr("stroke-width", 3)
+                .attr("opacity", 0.65)
+                .attr("d", line2([[cornerX, cornerY],
+                                  [cornerX + maxXLen, cornerY],
+                                  [cornerX + maxXLen, cornerY + maxYLen],
+                                  [cornerX, cornerY + maxYLen],
+                                  [cornerX, cornerY - 1.5]]));
+
+
+            // Remove tutorial text so that we can draw a background underneath
+            graphics.tutorialText.forEach(function(d) {d.remove()})
+            
+            
+            // Redraw tutorial text
+            graphics.tutorialText = writeBlurbSubfun(x, y, blurbStrings, graphics.mainSvg, delay, 1);
+
+            // Draw supplementary text
+            graphics.tutorialTextSmall = graphics.mainSvg.append("text")
+                .text(suppText)
+                .attr("id", "#suppText")
+                .attr("font-size", 10 + "px")
+                .attr("font-family", "sans-serif")
+                .attr("text-anchor","right")
+                .transition()
+                .delay(delay)
+                .attr("fill", "yellow")
+                .attr("opacity", 0.5)
+                .attr("x", cornerX + maxXLen - 80)
+                .attr("y", cornerY + maxYLen + 15);
+
+        }
+        
+        // Function for erasing tutorial text
+        function eraseBlurb(graphics) {
+            graphics.tutorialMask[0][0].remove();
+            graphics.tutorialBox.remove();
+            graphics.tutorialText.forEach(function(d) {d[0][0].remove()});
+            graphics.tutorialTextSmall[0][0].remove();
+        }
+        
+        // Helper function for writeBlurb
+        function writeBlurbSubfun(x, y, blurbStrings, mainSvg, delay, opacity) {
+            // Write text blurb for tutorial-use
+            tutorialText = new Array();
+            numLines = 6;
+            for (var i = 0; i < numTutTextLines; i++) {
+                tutorialText.push(mainSvg.append("text")
+                    .attr("id", "tutorialText")
+                    .attr("font-size", tutorialFontSz + "px")
+                    .attr("font-family", "sans-serif")
+                    .attr("text-anchor","left")
+                    .attr("fill", "yellow")
+                    .attr("opacity", opacity)
+                    .attr("x", w/4)
+                    .attr("y", h/5)
+                    .attr("transform", function(d) {return "translate(" + 0 + "," + i * tutorialFontSz + ")"}));
+            }
+            
+
+            // Draw blurb
+            for (var i = 0; i < tutorialText.length; i++) {
+                if (i < blurbStrings.length) {
+                    tutorialText[i].text(blurbStrings[i])
+                        .attr("x", x)
+                        .attr("y", y)
+                        .attr("opacity", 0);
+                    tutorialText[i].transition()
+                        .delay(delay)
+                        .attr("opacity", opacity);
+                }else {
+                    tutorialText[i]
+                        .text("")
+                        .attr("x", x)
+                        .attr("y", y);
+                }
+            }
+
+
+            return tutorialText;
+        }
+
+
+		function rescale() {
+			console.log("rescale");
+		}
+		
+        function mousedown() {
+            console.log("mousedown");
+			var currtime = new Date();
+
+			if (currtime.getTime() - lastupdatetime > wait_time
+                & (!waitFlag1500 | (currtime.getTime() - lastupdatetime > 1500)) &
+                (gameEnd == 0)) {
+				distfromarea = Math.sqrt(Math.pow(d3.mouse(this)[0] - graphics.steparea1.attr("cx"),2) + Math.pow(d3.mouse(this)[1] - graphics.steparea1.attr("cy"),2));
+                
+                // Reset wait flags
+                waitFlag1500 = 0;
+                
+                if (endblock) {
+                    // The round already ended
+                    
+                    if (tutorialMode == 12 | tutorialMode == 13 | tutorialMode == 14 | tutorialMode == 15 | tutorialMode == 16 | tutorialMode == 17) {
+                        // Erase previous text
+                        eraseBlurb(graphics);
+                        
+                        // Write the tutorial text
+                        if (tutorialMode == 12) {
+                            xPos = w * 9 / 32;
+                            yPos = h * 2 / 7;
+                        }else if (tutorialMode == 13) {
+                            xPos = w * 15 / 64;
+                            yPos = h * 2 / 7;
+                            
+                            // Start blinking arrow at hotspot.
+                            graphics.tutorialArrow.transition()
+                            .duration(500)
+                            .attr("opacity", 1);
+//                            placeArrow(w / 2, h / 2);
+
+
+                            clearInterval(blinkVar);
+                            blinkVar = setInterval(function() {blinkArrow(graphics.tutorialArrow)}, 800);
+
+                            placeArrow(refpt[0][0], refpt[0][1]);
+                        }else if (tutorialMode == 14) {
+                            xPos = w / 4;
+                            yPos = h * 2 / 7;
+                            
+                            if ((endpt.length % 2) == 0) {
+                                var pathCenter = endpt[(endpt.length / 2)];
+                            }else {
+                                // If even number of points in path, then take the midpoint of the middle segment.
+                                var pathCenter = [(endpt[(endpt.length + 1) / 2][0] + endpt[(endpt.length - 1) / 2][0]) / 2,
+                                                  (endpt[(endpt.length + 1) / 2][1] + endpt[(endpt.length - 1) / 2][1]) / 2];
+                            }
+
+                            // Start blinking arrow at center of mass of path.
+                            graphics.tutorialArrow.transition()
+                            .duration(500)
+                            .attr("opacity", 1);
+
+                            
+                            clearInterval(blinkVar);
+                            blinkVar = setInterval(function() {blinkArrow(graphics.tutorialArrow)}, 800);
+                            
+                            placeArrow(pathCenter[0], pathCenter[1]);
+                        }else if (tutorialMode == 15) {
+                            xPos = w * 7 / 30;
+                            yPos = h * 2 / 7;
+                            
+                            // Start blinking arrow at rating location.
+                            graphics.tutorialArrow.transition()
+                            .duration(500)
+                            .attr("opacity", 1);
+                            
+                            clearInterval(blinkVar);
+                            blinkVar = setInterval(function() {blinkArrow(graphics.tutorialArrow)}, 800);
+                            
+                            placeArrow(endpt[1][0] + 6 + 0.25 * (endpt[1][0] - endpt[2][0]),
+                                       endpt[1][1] - 12 + 0.25 * (endpt[1][1] - endpt[2][1]));
+                            
+                        }else if (tutorialMode == 16) {
+                            xPos = w / 5;
+                            yPos = h * 2 / 7;
+                            
+                            // Clear the previous blinking
+                            clearInterval(blinkVar);
+                            
+                            graphics.tutorialArrow.transition()
+                            .delay(260)
+                            .attr("opacity", 0);
+                        }else if (tutorialMode == 17) {
+                            xPos = w * 7 / 40;
+                            yPos = h * 2 / 7;
+                        }
+                        writeBlurb(xPos, yPos, tutText[tutorialMode], graphics, "(click to continue)", 0);
+
+
+                        tutorialMode = tutorialMode + 1;
+                    }else if (tutorialMode == -1) {
+                        eraseBlurb(graphics);
+                        tutorialMode = 0;
+                        
+                        // Tutorial bonus
+                        currentEarned = 0.10;
+                        moneyCount = moneyCount + currentEarned;
+                        
+                        // Update the display of current earned
+                        if (moneyCount > 0) {
+                            graphics.mainSvg.selectAll("#currentEarned")
+                                .text("+ $" + currentEarned.toFixed(2))
+                                .attr("font-size","40px")
+                                .transition()
+                                .duration(500)
+                                .attr("font-size",statfntsz);;
+    
+                            // fade away display
+                            graphics.mainSvg.selectAll("#currentEarned")
+                                .transition()
+                                .delay(2000)
+                                .text("");
+                        }
+                        
+                        // Update the total earned
+                        graphics.mainSvg.selectAll("#totalEarned")
+                        .text("$" + moneyCount.toFixed(2) + " earned");
+                        
+                    }else if (tutorialMode == -2) {
+                        eraseBlurb(graphics);
+                        tutorialMode = 1;
+                    }else{
+                        if (tutorialMode == 18) {
+                            // Erase previous text
+                            eraseBlurb(graphics);
+                            
+                            tutorialMode = tutorialMode + 1;
+                        }else if (finalscore_rec.length >= numRounds_tut & tutorialMode > 0) {
+                            numOK = finalscore_rec.map(function(a) {return a > 0;}).reduce(function(a, b) {return a + b;});
+                            if (numOK > 1) {
+                                tutorialMode = -1;
+                                writeBlurb(w / 4, h * 3 / 7, tutText[18], graphics, "(click to continue)", 0);
+                                graphics.userDisp[0].text("")
+                            }else {
+                                // If failed tutorial, redo tutorial.
+                                tutorialMode = -2;
+                                finalscore_rec = finalscore_rec.slice(0, 0);
+                                writeBlurb(w / 4, h * 3 / 7, tutText[19], graphics, "(click to continue)", 0);
+                            }
+                        }else {
+
+
+                            if (grandtrialnum == nRounds) {
+                                xPos = w * 6 / 48;
+                                yPos = h * 2 / 7;
+                                
+                                // For now, use random scores as peers for the scoreboard.
+                                var allRatings = Array.apply(null, new Array(99)).map(function() {return 0.3 + 0.5 * Math.random()});
+                                
+                                finalscore_nonzero = finalscore_rec.map(function(d) {return Math.max(0, d);});
+                                var overallRating = Math.mean(finalscore_nonzero);
+                                var overallPerc = Math.mean(allRatings.map(function(d) {return d <= overallRating;}));
+                                var roundPerc = Math.ceil(overallPerc * 20) / 20;
+                                var overallBonus = roundPerc;
+                                moneyCount = moneyCount + overallBonus;
+                                endText = ["Thank you for playing! Your overall performance rating is " + Math.round(100 * overallRating) + "%.",
+                                           "You performed better than " + Math.round(100 * roundPerc) + "% of your peers and earned a bonus of $" + overallBonus.toFixed(2) + ".",
+                                           "Congratulations!  You earned a total of $" + moneyCount.toFixed(2) + "."];
+                                 
+                                writeBlurb(xPos, yPos, endText, graphics, "(click to finish)", 0);
+                                gameEnd = 1;
+                                
+                            }else {
+                                endblock = false;
+                                graphics.newdots.remove();
+                                BlockReset();
+                            }
+                        }
+                    }
+                    
+                }else if (tutorialMode == 1 | tutorialMode == 4 | tutorialMode == 5 | tutorialMode == 6 | tutorialMode == 7
+                          | tutorialMode == 10) {
+                    // Continue tutorial mode without continuing gameplay.
+
+                    // Erase previous text
+                    eraseBlurb(graphics);
+
+                    if (tutorialMode == 1) {
+                        
+                        writeBlurb(w / 6, h * 4 / 10, tutText[tutorialMode], graphics, "(click to continue)", 0);
+                        
+                    }else if (tutorialMode == 4 | tutorialMode == 5 | tutorialMode == 6) {
+                        
+                        // Clear the previous blinking
+                        clearInterval(blinkVar);
+                        
+                        // Make the white circle blink
+                        blinkVar = setInterval(function() {blinkArrow(graphics.steparea1)}, 800);
+                        
+                        // Write the tutorial text
+                        if (tutorialMode == 4) {
+                            xPos = w * 1 / 8;
+                            yPos = h * 7 / 20;
+                        }else if (tutorialMode == 5) {
+                            xPos = w * 1 / 12;
+                            yPos = h * 7 / 20;
+                        }else if (tutorialMode == 6) {
+                            xPos = w * 1 / 6;
+                            yPos = h * 7 / 20;
+                        }
+                        writeBlurb(xPos, yPos, tutText[tutorialMode], graphics, "(click to continue)", 0);
+                        
+                    }
+                    
+                    // Proceed with tutorial
+                    tutorialMode = tutorialMode + 1;
+                }else if (clickCenterEvent == 1) {
+                    
+                    // The "click in center" reminder is on so let's erase the text.
+                    eraseBlurb(graphics);
+                    clickCenterEvent = 2;
+                    
+                }else if (clickOutEvent == 1) {
+                    
+                    eraseBlurb(graphics);
+                    clickOutEvent = 2;
+
+                }else if (tutorialMode == 2) {
+
+                    // Clear previous tutorial text
+                    eraseBlurb(graphics);
+                    
+                    // Start blinking arrow at center.
+                    graphics.tutorialArrow.transition()
+                        .duration(500)
+                        .attr("opacity", 1);
+                    placeArrow(w/2, h/2);
+                    blinkVar = setInterval(function() {blinkArrow(graphics.tutorialArrow)}, 800);
+                    
+                    // Continue to next step of tutorial
+                    tutorialMode = tutorialMode + 1;
+                    
+                }else if (tutorialMode != 3 & trialnum == 1 & distfromarea > graphics.steparea1.attr("r")) {
+                    // This is the case where user clicked somewhere other than the center on the first move.
+                    
+                    if (!(typeof(graphics.tutorialMask) === 'undefined')) {
+                        eraseBlurb(graphics);
+                    }
+                    writeBlurb(w / 5, h * 3 / 7, tutText[20], graphics, "(click to continue)", 0);
+                    
+                    graphics.tutorialArrow.attr("opacity", 1);
+                    
+                    // Start blinking arrow at center.
+                    graphics.tutorialArrow.transition()
+                        .duration(500)
+                        .attr("opacity", 1);
+                    placeArrow(w/2, h/2);
+                    
+                    clearInterval(blinkVar);
+                    blinkVar = setInterval(function() {blinkArrow(graphics.tutorialArrow)}, 800);
+                    
+                    // Indicate this event happened
+                    clickCenterEvent = 1;
+                    
+                }else if ((trialnum!=1 | distfromarea < graphics.steparea1.attr("r"))) {
+                    // USER JUST MADE A MOVE
+                    
+                    // Sound indicates new move
+                    play_multi_sound('click2');
+                    
+                    
+                    //////////// Tutorial-related cases ////////////
+                    if (!(typeof(graphics.tutorialMask) === 'undefined')) {
+                        eraseBlurb(graphics);
+                    }
+
+                    if (clickCenterEvent == 2) {
+                        console.log("clearing");
+                        // clear the blinking arrow
+                        clearInterval(blinkVar);
+                        graphics.tutorialArrow.transition()
+                            .delay(260)
+                            .attr("opacity", 0);
+                        clickCenterEvent = 3;
+                    }
+                    
+                    if (distfromarea > graphics.steparea1.attr("r") & !clickOutEvent
+                        & (tutorialMode == 0 | tutorialMode > 15)) {
+                        
+                        if (!(typeof(graphics.tutorialMask) === 'undefined')) {
+                            eraseBlurb(graphics);
+                        }
+                        writeBlurb(w * 7 / 30, h * 2 / 7, tutText[21], graphics, "(click to continue)", 1000);
+                        
+                        // Ensure that this doesn't show again
+                        clickOutEvent = 1;
+                    }
+                    
+                    // Tutorial section
+                    if (tutorialMode == 3) {
+                        // If we're in tutorial mode, then proceed to next step while continuing gameplay.
+
+                        writeBlurb(w / 5, h * 7 / 20, tutText[tutorialMode], graphics, "(click to continue)", 1000);
+
+                        // Stop blinking yellow arrow
+                        clearInterval(blinkVar);
+                        // For some reason, this only works with "style" and not "attr" here,
+                        // but works with "attr" if I place this statement after the setInterval line?
+                        graphics.tutorialArrow.transition()
+                            .delay(260)
+                            .attr("opacity", 0);
+                        
+                        // Make score donut blink
+                        blinkVar = setInterval(function() {blinkArrow(graphics.scoreDonut)}, 800);
+
+                        tutorialMode = tutorialMode + 1;
+                    }
+
+                    ///////////////////////////////////////////////////
+
+
+                    if (trialnum==1) {
+                        // Record session start time
+                        SessStartTime = new Date().getTime();
+                        
+                        // Get position 1st move in the center
+                        var xpt = ringinfo[0][0];
+                        var ypt = ringinfo[0][1];
+                        
+                        // Record the time of the move relative to session start
+                        times.push(0);
+                        
+                        stepSizes.push(0);
+                    }else {
+                        // Get position new move, bounded by steparea
+                        var xpt = currpt[0];
+                        var ypt = currpt[1];
+                        
+                        // Record the time of the move relative to session start
+                        times.push(new Date().getTime() - SessStartTime);
+                        
+                        stepSizes.push(Number(graphics.steparea1.attr("r")));
+                    }
+                    stepCenters.push([Number(graphics.steparea1.attr("cx")), Number(graphics.steparea1.attr("cy"))]);
+                    
+                    
+                    // Record location of new move
+                    endpt.push([xpt, ypt]);
+                    handpt.push([currloc[0], currloc[1]]);
+                    
+                    // Record distance of move from the hotspot
+                    dist.push(Math.sqrt(Math.pow(refpt[trialnum - 1][0] - endpt[endpt.length - 1][0], 2)
+                        + Math.pow(refpt[trialnum - 1][1] - endpt[endpt.length - 1][1], 2)));
+                        
+                    // Calculate and record score of move
+                    var distFarthest = bigstep * maxTrials;
+                    var currScore = scoreMax - grad / bigstep * (dist[dist.length - 1] - (distFarthest < d0) * (d0 - distFarthest));
+                    scores.push(currScore);
+                    var lastScore = scores[scores.length - 1];
+                    var penultScore = scores[scores.length - 2];
+                    
+                    // debugging
+                    console.log("x=" + endpt[endpt.length-1][0] + ", y=" + endpt[endpt.length-1][1] + ", dist="+dist[dist.length-1]);
+                    
+                    // Update queue of previous two points.
+                    prevpts.push([endpt[endpt.length - 1][0], endpt[endpt.length - 1][1]]);
+                    if (prevpts.length > 2) {
+                        prevpts.splice(0, 1);
+                    }
+                    
+                    // Update the allowed step range (white circle)
+                    if (prevpts.length > 1) {
+                        lastpt = prevpts[1];
+                    }else {
+                        lastpt = prevpts[0];
+                    }
+                    graphics.steparea1.attr("cx", lastpt[0])
+                        .attr("cy", lastpt[1])
+                        .attr("r", bigstep);
+                
+                    // Prepare the animation for dot addition or removal
+                    if (scores.length == 1) {
+                        // Add dots for move 0
+                        graphics.newdots.remove();
+                        graphics["newdots"] = graphics.dotDisplay
+                            .data(rwddots.slice(0, score0))
+                            .enter().append("rect")
+                            .attr("class", "score")
+                            .attr("width", minidotsz)
+                            .attr("height", minidotsz)
+                            .attr("x", function(d) {return d[0] + lastpt[0];})
+                            .attr("y", function(d) {return d[1] + lastpt[1];})
+                            .style("stroke-width", 0)
+                            .style("fill", "rgb(255,0,0)");
+                            
+                    }else if(lastScore > penultScore) {
+                        console.log("INCREASING");
+                        // Increased in score so add new dots
+                        graphics["newdots"] = graphics.dotDisplay
+                            .data(rwddots.slice(Math.round(penultScore), Math.round(lastScore)))
+                            .enter()
+                            .append("rect")
+                            .attr("class", "score")
+                            .attr("width", 0)
+                            .attr("height", 0)
+                            .attr("x", function(d) {return d[0] + lastpt[0];})
+                            .attr("y", function(d) {return d[1] + lastpt[1];})
+                            .style("stroke", "red")
+                            .style("stroke-width", 0)
+                            .style("fill", "rgb(255,0,0)");
+                        
+                        // Animate the addition of new dots
+                        graphics.newdots.transition()
+                        .delay(dotDelay)
+                        .duration(0)
+                        .attr("width", minidotsz)
+                        .attr("height", minidotsz)
+
+                        // Select all the existing dots for next iteration
+                        graphics.newdots = graphics.mainSvg.selectAll(".score");
+                        
+                        // If in tutorial mode, proceed with tutorial.
+                        if (tutorialMode == 8) {
+                            // Clear the previous blinking
+                            clearInterval(blinkVar);
+                            
+                            // Write tutorial text and proceed with tutorial
+                            writeBlurb(w / 5, h * 7 / 20, tutText[tutorialMode + 1], graphics, "(click to continue)", 1500);
+                            
+                            waitFlag1500 = 1;
+                            tutorialMode  = 10;
+                        }
+
+                    }else {
+                        console.log("DECREASING");
+                        // Decreased in score so remove dots
+                        removedots = graphics.mainSvg.selectAll(".score").filter(function(d, i) {return i >= Math.round(lastScore);});
+                        
+                        // Animate the removal of dots
+                        removedots.transition()
+                            .delay(dotDelay)
+                            .duration(0)
+                            .remove();
+                            
+                            
+                        // If in tutorial mode, proceed with tutorial.
+                        if (tutorialMode == 8) {
+                            // Clear the previous blinking
+                            clearInterval(blinkVar);
+                            
+                            // Write tutorial text and proceed with tutorial
+                            writeBlurb(w / 5, h * 7 / 20, tutText[tutorialMode], graphics, "(click to continue)", 1500);
+                            
+                            waitFlag1500 = 1;
+                            tutorialMode  = 10;
+                        }
+                    }
+                    setTimeout(function(){play_multi_sound('click3')}, dotDelay);
+                    
+                    
+                    console.log(dist)
+                    trialnum = trialnum + 1; 
+                    // End of block 
+                    if (trialnum > totaltrials) {
+
+                        // Continue tutorial
+                        if (tutorialMode == 11) {
+                            
+                            writeBlurb(w / 5, h * 2 / 7, tutText[tutorialMode], graphics, "(click to continue)", 1500);
+                            
+                            // Proceed with the tutorial
+                            tutorialMode = tutorialMode + 1;
+                        }
+                        
+
+                        SessTotalTime = new Date().getTime() - SessStartTime;
+                        console.log(SessTotalTime);
+                        
+                        // Indicate that the block has ended
+                        endblock = true;
+                        
+                        // Show the hotspot location
+                        graphics.truetarg.attr("cx",refpt[trialnum-2][0])
+                            .attr("cy",refpt[trialnum-2][1])
+                            .attr("r",8);
+                            
+                        // Show the final move location
+                        graphics.finalpt.attr("cx",endpt[endpt.length-1][0])
+                            .attr("cy",endpt[endpt.length-1][1])
+                            .attr("r",4);
+                        
+                        // Show the path toward final move from move 1
+                        line2 = d3.svg.line().x(function (d) {return d[0];})
+                                .y(function(d) {return d[1];});	
+                        graphics.fullpath.attr("stroke-width", 3)
+                            .attr("d", line2(endpt.slice(1, endpt.length)));
+
+                        // Distance to hotspot from move 1 location
+                        startDist = Math.sqrt(Math.pow(endpt[1][1]-refpt[refpt.length-1][1],2) + Math.pow(endpt[1][0]-refpt[refpt.length-1][0],2));
+                        
+                        // Distance to hotspot from last move location
+                        endDist = Math.sqrt(Math.pow(endpt[endpt.length-1][1]-refpt[refpt.length-1][1],2) + Math.pow(endpt[endpt.length-1][0]-refpt[refpt.length-1][0],2));
+                        
+                        // The max potential distance that could've been traveled toward hotspot from move 1 location
+                        potDist = Math.min((totaltrials - 1) * bigstep, startDist);
+                        
+                        // debugging
+                        console.log([startDist,endDist,potDist]);
+                        
+                        // Convert the distance to a percentage score
+                        finalScore = (startDist - endDist) / potDist;
+                        
+                        // Store the percentage score
+                        finalscore_rec.push(finalScore);
+                        
+                        // Display the rating of performance
+                        graphics.stats1.text((100 * Math.max(finalScore, 0)).toFixed(0) + "%")
+                        .attr("x", endpt[1][0] + 0.25 * (endpt[1][0] - endpt[2][0]))
+                        .attr("y", endpt[1][1] + 0.25 * (endpt[1][1] - endpt[2][1]));
+                        
+                        // Payoff for current score
+                        if (tutorialMode == 0) {
+                            if (finalScore > 0.9) {
+                                currentEarned = 0.05;
+                            }else if (finalScore > 0.6) {
+                                currentEarned = 0.03;
+                            }else if (finalScore > 0.3) {
+                                currentEarned = 0.02;
+                            }else if (finalScore > 0) {
+                                currentEarned = 0.01;
+                            }else {
+                                currentEarned = 0;
+                            }
+                        }
+                        console.log([currentEarned, moneyCount]);
+                        
+                        moneyCount = moneyCount + currentEarned;
+                        
+                        // Update the display of current earned
+                        if (currentEarned > 0) {
+                            graphics.mainSvg.selectAll("#currentEarned")
+                                .text("+ $" + currentEarned.toFixed(2))
+                                .attr("font-size","40px")
+                                .transition()
+                                .duration(500)
+                                .attr("font-size",statfntsz);
+                            
+                            // Fade away display
+                            graphics.mainSvg.selectAll("#currentEarned")
+                                .transition()
+                                .delay(2000)
+                                .text("");
+                        }
+                        // Update the total earned
+                        graphics.mainSvg.selectAll("#totalEarned")
+                            .text("$" + moneyCount.toFixed(2) + " earned");
+                        
+                        // Update the "update" time
+                        var currtime = new Date();
+                        lastupdatetime = currtime.getTime();
+                        updateTimes.push(lastupdatetime);
+
+                        // Record all variables
+                        psiTurk.recordTrialData({'phase':"ROUND",
+                                                'tutorialMode':tutorialMode,
+                                                'roundNum':grandtrialnum,
+                                                'hotspotLoc':refpt[trialnum - 2],
+                                                'ringR':ringinfo[trialnum - 2][2],
+                                                'totalTrials':totaltrials,
+                                                'SessStartTime':SessStartTime,
+                                                'SessTotalTime':SessTotalTime,
+                                                'dotSize':minidotsz,
+                                                'dotDelay':dotDelay,
+                                                'dotDonutR':[dotRwdInnerR, dotRwdOuterR],
+                                                'rSeed':rSeed,
+                                                'rDotStartX':rDotStartX,
+                                                'rDotEndY':rDotEndY,
+                                                'waitTime':wait_time,
+                                                'gradMin':gradMin,
+                                                'gradMax':gradMax,
+                                                'grad':grad,
+                                                'd0':d0,
+                                                'score0':score0,
+                                                'numDots':numDots,
+                                                'scoreMax':scoreMax,
+                                                'currentEarned':currentEarned,
+                                                'moneyCount':moneyCount,
+                                                'finalScore':finalScore,
+                                                'startDist':startDist,
+                                                'endDist':endDist,
+                                                'potDist':potDist,
+                                                'scores':JSON.stringify(scores),
+                                                'dist':JSON.stringify(dist),
+                                                'endpt':JSON.stringify(endpt),
+                                                'handpt':JSON.stringify(handpt),
+                                                'times':JSON.stringify(times),
+                                                'updateTimes':JSON.stringify(updateTimes),
+                                                'stepSizes':JSON.stringify(stepSizes),
+                                                'stepCenters':JSON.stringify(stepCenters)}
+                                                );
+
+                        psiTurk.saveData()
+                    }else {
+                        var currtime = new Date();
+                        lastupdatetime = currtime.getTime();
+                        updateTimes.push(lastupdatetime);
+                    }
+                }
+              
+            currloc = d3.mouse(this);
+            updatecursor(currloc, wait_time, trans_time);
+            visupdated = false;
+            console.log(visupdated);
+
+            }else if (gameEnd == 1) {
+                // Move to the debriefing page.
+                // Move to the complete page.
+                psiTurk.completeHIT();
+//                currentview = new Debrief([moneyCount, overallBonus, overallRating, overallPerc, roundPerc]);
+            }
+		}
+
+		function mousemove() {
+			console.log("mousemove");
+			var currtime = new Date();
+			if (currtime.getTime() - lastupdatetime > 0) {
+                currloc = d3.mouse(this);
+				updatecursor(currloc, 0, 0);
+				visupdated = true;
+			}
+		}
+		function updatecursor(currloc, delay, dur) {
+			var pt_x = graphics.steparea1.attr("cx");
+			var pt_y = graphics.steparea1.attr("cy");
+			var pt_r = graphics.steparea1.attr("r");
+			var distfromarea = Math.sqrt(Math.pow(currloc[0] - pt_x, 2) + Math.pow(currloc[1] - pt_y, 2));
+
+
+            // Set pointer location
+			if (trialnum==1) {
+                // On Move 0, pointer is fixed at center
+				currpt = [pt_x, pt_y];
+			}else if (distfromarea < pt_r) {
+                // On Move 1+, pointer is free to move within gray border
+				currpt = currloc;
+			}else {
+                // If mouse moves beyond gray border, pointer stays within gray border
+				dy = currloc[1] - pt_y;
+				dx = currloc[0] - pt_x;
+				angle = Math.atan2(dy, dx);
+				sine = Math.sin(angle);
+				cosine = Math.cos(angle);
+				currpt = [(pt_r * cosine) + 1 * pt_x, pt_r * sine + 1 * pt_y];
+			}
+
+			graphics.pointer
+                .attr("cx", currpt[0])
+                .attr("cy", currpt[1]);
+                
+            graphics.pointerHand
+                .attr("cx", currloc[0])
+                .attr("cy", currloc[1]);
+            
+			graphics.pointerstring.attr("x1", currpt[0])
+                .attr("x2", currloc[0])
+                .attr("y1", currpt[1])
+                .attr("y2", currloc[1]);
+
+			graphics.scoreDonut.attr("transform", function(d) {return "translate(" + currpt[0] + "," + currpt[1] + ")"})
+			if ("removelayer1" in graphics) {
+				graphics.removelayer1.attr("x", function(d) {return d[0] + currpt[0];})
+					.attr("y", function(d) {return d[1] + currpt[1];});
+			}
+			graphics.newdots.attr("x", function(d) {return d[0] + currpt[0];})
+				.attr("y", function(d) {return d[1] + currpt[1];});
+		}
+		function mouseup() {
+			console.log("mouseup");
+		}
+		
+		// Prep audio files
+		function InitAudio() {
+			var channel_max = 10;	// number of channels
+			audiochannels = new Array();
+			for (var a=0;a<channel_max;a++) {	// prepare the channels
+				audiochannels[a] = new Array();
+				audiochannels[a]['channel'] = new Audio();	// create a new audio object
+				audiochannels[a]['finished'] = -1;	// expected end time for this channel
+			}
+		}
+
+		function play_multi_sound(s) {
+			for (a=0;a<audiochannels.length;a++) {
+				thistime = new Date();
+				if (audiochannels[a]['finished'] < thistime.getTime()) {			
+					audiochannels[a]['finished'] = thistime.getTime() 
+						+ document.getElementById(s).duration*1000;
+					audiochannels[a]['channel'].src = document.getElementById(s).src;
+					audiochannels[a]['channel'].load();
+					audiochannels[a]['channel'].play();
+					break;
+				}
+			}
+		}
+        </script>
+		<div id="fb-root"></div>
+    </body>
+</html>   
