@@ -74,11 +74,13 @@
 //        var tutorialMode = 0;
         var numTutTextLines = 7;  // Number of text lines allowed in blurb
         var blinkVar = 0;
-        var numRounds_tut = 3;
+        var numRounds_tut = 6;
+        var tutCompleteThresh = 4;
         var waitFlag1500 = 0;
         var clickOutEvent = 0;
         var clickInEvent = 0;
         var clickCenterEvent = 0;
+        var exitFlag = 0;
         
         // tutorial blurbs
         var tutText = new Array();
@@ -118,7 +120,7 @@
         
         // tutorialMode == 9
         tutText.push(["Did you notice that the dots decreased?",
-                      "You moved farther away from the hotspot."]);
+                      "You moved farther away from the hotspot. Try to get closer to the hotspot!"]);
                       
         // tutorialMode == 10
         tutText.push(["Did you notice that the dots increased?",
@@ -128,7 +130,7 @@
         tutText.push([""]);
 
         // tutorialMode == 12
-        tutText.push(["This is the end of the game. Each game ends after",
+        tutText.push(["This is the end of the first game. Each game ends after",
                     "a small number of moves, even if you don't reach the hotspot.",
                     "Some games may have fewer moves than others."]);
 
@@ -153,11 +155,10 @@
         // tutorialMode == 18
         tutText.push(["Click again to move on to the next game!",
                       "The hotspot will be reset to a new location.",
-                      "Complete a few games successfully on your own to exit the tutorial!"]);
+                      "Complete a few games successfully on your own to finish the tutorial!"]);
 
         // tutorialMode == 19
-        tutText.push(["Great!  Receive $0.10 for concluding the tutorial.",
-                      "Now play the hotspot game for real!"]);
+        tutText.push(["Great!  Receive $0.15 for concluding the tutorial."]);
                       
         // tutorialMode == 20
         tutText.push(["Maybe we need more practice before we start.",
@@ -174,7 +175,7 @@
 
         var quizText = new Array();
         var quizAnswers = new Array();
-        var quizMode = 1; // Indicator of whether we are in quiz mode or not
+        var quizMode = 0; // Indicator of whether we are in quiz mode or not
         var changedQuizMode = 0;
         var answerKey = new Array();
         var currQuizNum;
@@ -346,7 +347,7 @@
                 
                 // Introduce tutorial if starting tutorial
                 if (tutorialMode == 1) {
-                    writeBlurb(w / 5, h * 4 / 10, tutText[tutorialMode - 1], graphics, "(click to continue)", 0);
+                    writeBlurb(h * 4 / 10, tutText[tutorialMode - 1], graphics, "(click to continue)", 0);
                 }
             }
             
@@ -358,7 +359,7 @@
             }else if (tutorialMode > 0) {
                 // In subsequent tutorial rounds, set the number of moves
                 // from 6 to 10
-                totaltrials = Math.floor(Math.random() * 5) + 6;
+                totaltrials = Math.floor(Math.random() * 5) + 5;
             }else {
                 // trials from 4 to 11
                 totaltrials = Math.floor(Math.random() * (maxTrials - minTrials) + 1) + minTrials;
@@ -466,7 +467,9 @@
 			steparea1 = mainSvg.append("circle")
 				.style("fill","black")
 				.style("stroke", "gray")
+                .style("cursor", "pointer")
 				.on("mouseover", function(){
+                    console.log("hovering")
 				});
 
             // CURRENTLY NOT USED
@@ -622,6 +625,36 @@
                 .attr("fill", "green")
                 .attr("x", w / 28)
                 .attr("y", h * 3 / 28));
+                
+            // For amount earned in current round
+            exitButton = mainSvg.append("g")
+                .data([[24.5 * w / 28, 1.4 * h / 28]])
+                .attr("class", "exitButton")
+                .style("cursor", "pointer")
+                .on("mouseover", function(){ d3.select(this).style("fill", "white");})
+                .on("mouseout", function(){ d3.select(this).style("fill", "black");})
+                .on("click", function() {clickExit()});
+
+            tmpWidth = 155;
+            exitButton.append("rect")
+                .attr("id", "buttonRect")
+                .attr("fill", "green")
+                .attr("x", function(d) {return d[0] - tmpWidth / 2})
+                .attr("y", function(d) {return d[1] - 20})
+                .attr("rx", 6)
+                .attr("ry", 6)
+                .attr("width", tmpWidth)
+                .attr("height", 30)
+                .style("fill", d3.scale.category20c());
+                
+                exitButton.append("text")
+                .attr("id", "buttonText")
+                .text("Exit game & cash out")
+                .attr("text-anchor", "middle")
+                .attr("font-size", statfntsz + "px")
+                .attr("x", function(d) {return d[0]})
+                .attr("y", function(d) {return d[1]})
+            
             
             tutorialArrow = mainSvg.append("path")
                 .attr("opacity", 0)
@@ -638,13 +671,15 @@
 				scoreDonut : scoreDonut,  dotScoreDisp : dotScoreDisp,
 				steparea1 : steparea1, steparea2 : steparea2, steparea3 : steparea3,
 				truetarg : truetarg, finalpt : finalpt, stats1 : stats1, fullpath : fullpath,
-                tutorialArrow : tutorialArrow,
+                tutorialArrow : tutorialArrow, exitButton : exitButton,
                 userDisp : userDisp};
 		}
 
 		InitAudio();
 		graphics = InitDraw();
 		BlockReset();
+        
+
 
         ///////////// Tutorial-use functions /////////////
 
@@ -680,10 +715,16 @@
         }
         
         // Function for writing blurbs. Input is an array of strings.
-        function writeBlurb(x, y, blurbStrings, graphics, suppText, delay) {
+        function writeBlurb(y, blurbStrings, graphics, suppText, delay) {
             // tutorial sound
             setTimeout(function(){play_multi_sound('chime')}, delay);
-
+            
+            
+            // Calculate centered x position.
+            var maxLen = blurbStrings.map(function(d)
+                                        {return d.length}).reduce(function(a, b)
+                                                                  {return Math.max(a, b)});
+            var x = w / 2 - (maxLen / 2) * tutorialFontSz / 2 * 7 / 8;
             
             // Draw a mask for when displaying tutorial text
             graphics.tutorialMask = graphics.mainSvg.append("rect")
@@ -710,7 +751,10 @@
             var maxXLen = Math.max.apply(null, textWids) + 30;
             var maxYLen = textHeis.reduce(function(a, b) {return a + b}) + 20;
 
+
+            
             graphics.tutorialBox = graphics.mainSvg.append("svg:path")
+                .attr("id", "tutBox")
                 .attr("stroke", "yellow")
                 .attr("fill", "rgb(70, 70, 70)");
             
@@ -736,7 +780,7 @@
             // Draw supplementary text
             graphics.tutorialTextSmall = graphics.mainSvg.append("text")
                 .text(suppText)
-                .attr("id", "#suppText")
+                .attr("id", "suppText")
                 .attr("font-size", 10 + "px")
                 .attr("font-family", "sans-serif")
                 .attr("text-anchor","right")
@@ -748,13 +792,18 @@
                 .attr("y", cornerY + maxYLen + 15);
 
         }
-        
+
         // Function for erasing tutorial text
         function eraseBlurb(graphics) {
             graphics.tutorialMask[0][0].remove();
             graphics.tutorialBox.remove();
             graphics.tutorialText.forEach(function(d) {d[0][0].remove()});
             graphics.tutorialTextSmall[0][0].remove();
+            
+            d3.selectAll(".tutorialMask").remove()
+            d3.selectAll("#tutBox").remove()
+            d3.selectAll("#tutorialText").remove()
+            d3.selectAll("#suppText").remove()
         }
         
         // Helper function for writeBlurb
@@ -897,7 +946,26 @@
             console.log(quizVal);
             console.log(answerKey[currQuizNum]);
             
-            if (quizVal == answerKey[currQuizNum]) {
+            if (currQuizNum == -1) {
+                if (quizVal == 0) {
+                    endText = ["Thank you for playing! You earned a total of $" + moneyCount.toFixed(2) + "."];
+                    eraseBlurb(graphics);
+                    yPos = h * 2 / 7;
+                    writeBlurb(yPos, endText, graphics, "(click to finish)", 0);
+                    
+                    // Save quiz data
+                    psiturk.recordUnstructuredData('quizPerformance', quizMode - 2);
+                    psiTurk.saveData();
+                    
+                    setTimeout(function() {psiTurk.completeHIT();}, 2000);
+                }else {
+                    exitFlag = 0;
+                    // Erase quiz
+                    eraseBlurb(graphics);
+                    graphics.mainSvg.selectAll("#quizAnswer").remove()
+                    graphics.mainSvg.selectAll("#quizAnsBox").remove()
+                }
+            }else if (quizVal == answerKey[currQuizNum]) {
                 console.log("CORRECT");
                 
                 // Erase previous junk
@@ -907,7 +975,7 @@
                 
                 xPos = w * 22 / 48;
                 yPos = h * 2 / 7;
-                writeBlurb(xPos, yPos, ["Correct!"], graphics, "(click to continue)", 0);
+                writeBlurb(yPos, ["Correct!"], graphics, "(click to continue)", 0);
                 
                 // Move onto next question
                 changedQuizMode = 0;
@@ -921,10 +989,15 @@
                 // End HIT?
                 endText = ["Thank you for playing! You earned a total of $" + moneyCount.toFixed(2) + "."];
                 eraseBlurb(graphics);
-                xPos = w * 11 / 48;
                 yPos = h * 2 / 7;
-                writeBlurb(xPos, yPos, endText, graphics, "(click to finish)", 0);
-//                psiTurk.completeHIT();
+                writeBlurb(yPos, endText, graphics, "(click to finish)", 0);
+
+                // Save quiz data
+                psiturk.recordUnstructuredData('quizPerformance', quizMode - 2);
+                psiTurk.saveData();
+                
+                setTimeout(function() {psiTurk.completeHIT();}, 2000);
+                //
             }
         }
 
@@ -932,9 +1005,29 @@
 			console.log("rescale");
 		}
         
+        function clickExit() {
+            //eraseBlurb(graphics);
+            if (tutorialMode == 0) {
+                warningText = ["If you complete " + (nRounds - grandtrialnum) + " more games, you'll receive a completion bonus",
+                                  "and see how you compare with other workers.",
+                                  "Are you sure you want to exit?"];
+            }else {
+                warningText = ["If you complete the tutorial and quiz, you'll get a chance",
+                               "to play an extended bonus round to earn more money.",
+                               "Are you sure you want to exit?"];
+            }
+
+            writeBlurb(h * 2.75 / 7, warningText, graphics,
+                     "(click one answer)", 0);
+         
+            exitFlag = -1;
+            // Draw possible answers
+            displayQuiz({answers : ["Yes, I want to exit", "No, I want to continue"]}, exitFlag);
+        }
+        
         // This generic mousedown function routes to different mousedown funcs
         function mousedown() {
-            if (quizMode > 0) {
+            if (quizMode > 0 | exitFlag == -1) {
                 mousedownQuiz(d3.mouse(this))
             } else {
                 mousedownGame(d3.mouse(this))
@@ -945,7 +1038,7 @@
         function mousedownQuiz(mousePos) {
             if (quizMode == 1) {
                 eraseBlurb(graphics);
-                writeBlurb(w / 5, h * 3 / 7, quizPrompt, graphics,
+                writeBlurb(h * 3 / 7, quizPrompt, graphics,
                            "(click to continue)", 0);
                 quizMode++;
             }else if (changedQuizMode == 0) {
@@ -960,8 +1053,11 @@
                                       "Move onto the extended bonus round.",
                                       "You get paid for each hotspot game played",
                                       "and the better you do, the more you earn."];
-                    writeBlurb(w / 2 - 160, h * 3 / 7, bonusRoundText, graphics,
+                    writeBlurb(h * 3 / 7, bonusRoundText, graphics,
                                "(click to continue)", 0);
+                               
+                    psiturk.recordUnstructuredData('quizPerformance', quizMode - 2)
+                    psiTurk.saveData()
                     quizMode = 0;
                 } else {
                     // Progress to the next quiz question.
@@ -969,7 +1065,7 @@
                     
                     // Draw question text
                     xCent = w / 2 - currQuiz.prompt[0].length / 2 * tutorialFontSz / 2;
-                    writeBlurb(xCent, h * 3 / 7, currQuiz.prompt, graphics,
+                    writeBlurb(h * 3 / 7, currQuiz.prompt, graphics,
                                "(click one answer)", 0);
                    
                    // Draw possible answers
@@ -983,10 +1079,14 @@
         // Mousedown function for game mode
         function mousedownGame(mousePos) {
 			var currtime = new Date();
+            
+            var distfromCent = Math.sqrt(Math.pow(mousePos[0] - graphics.taskSpace.attr("cx"), 2)
+                                         + Math.pow(mousePos[1] - graphics.taskSpace.attr("cy"), 2));
 
 			if (currtime.getTime() - lastupdatetime > wait_time
-                & (!waitFlag1500 | (currtime.getTime() - lastupdatetime > 1500)) &
-                (gameEnd == 0)) {
+                & (!waitFlag1500 | (currtime.getTime() - lastupdatetime > 1500))
+                & (gameEnd == 0)
+                & (distfromCent <= graphics.taskSpace.attr("r"))) {
 				distfromarea = Math.sqrt(Math.pow(mousePos[0] - graphics.steparea1.attr("cx"),2) + Math.pow(mousePos[1] - graphics.steparea1.attr("cy"),2));
                 
                 // Reset wait flags
@@ -1069,7 +1169,7 @@
                             xPos = w * 7 / 40;
                             yPos = h * 2 / 7;
                         }
-                        writeBlurb(xPos, yPos, tutText[tutorialMode], graphics, "(click to continue)", 0);
+                        writeBlurb(yPos, tutText[tutorialMode], graphics, "(click to continue)", 0);
 
 
                         tutorialMode = tutorialMode + 1;
@@ -1078,7 +1178,7 @@
                         tutorialMode = 0;
                         
                         // Tutorial bonus
-                        currentEarned = 0.10;
+                        currentEarned = 0.15;
                         moneyCount = moneyCount + currentEarned;
                         
                         // Update the display of current earned
@@ -1112,15 +1212,21 @@
                             tutorialMode = tutorialMode + 1;
                         }else if (finalscore_rec.length >= numRounds_tut & tutorialMode > 0) {
                             numOK = finalscore_rec.map(function(a) {return a > 0;}).reduce(function(a, b) {return a + b;});
-                            if (numOK > 1) {
+                            if (numOK > tutCompleteThresh) {
+                                // End tutorial
                                 tutorialMode = -1;
-                                writeBlurb(w / 4, h * 3 / 7, tutText[19], graphics, "(click to continue)", 0);
+                                writeBlurb(h * 3 / 7, tutText[19], graphics, "(click to continue)", 0);
+                                
+                                // Enter quiz
+                                quizMode = 1;
+                                
+                                // Delete "tutorial" sign
                                 graphics.userDisp[0].text("")
                             }else {
                                 // If failed tutorial, redo tutorial.
                                 tutorialMode = -2;
                                 finalscore_rec = finalscore_rec.slice(0, 0);
-                                writeBlurb(w / 4, h * 3 / 7, tutText[20], graphics, "(click to continue)", 0);
+                                writeBlurb(h * 3 / 7, tutText[20], graphics, "(click to continue)", 0);
                             }
                         }else {
 
@@ -1142,7 +1248,7 @@
                                            "You performed better than " + Math.round(100 * roundPerc) + "% of your peers and earned a bonus of $" + overallBonus.toFixed(2) + ".",
                                            "Congratulations!  You earned a total of $" + moneyCount.toFixed(2) + "."];
                                  
-                                writeBlurb(xPos, yPos, endText, graphics, "(click to finish)", 0);
+                                writeBlurb(yPos, endText, graphics, "(click to finish)", 0);
                                 gameEnd = 1;
                                 
                             }else {
@@ -1162,7 +1268,7 @@
 
                     if (tutorialMode == 1) {
                         
-                        writeBlurb(w / 6, h * 4 / 10, tutText[tutorialMode], graphics, "(click to continue)", 0);
+                        writeBlurb(h * 4 / 10, tutText[tutorialMode], graphics, "(click to continue)", 0);
                         
                     }else if (tutorialMode == 4) {
                         
@@ -1175,7 +1281,7 @@
                         // Write the tutorial text
                         xPos = w * 1 / 8;
                         yPos = h * 7 / 20;
-                        writeBlurb(xPos, yPos, tutText[tutorialMode], graphics, "(click to continue)", 0);
+                        writeBlurb(yPos, tutText[tutorialMode], graphics, "(click to continue)", 0);
                         
                     }
                     
@@ -1218,7 +1324,7 @@
                     if (!(typeof(graphics.tutorialMask) === 'undefined')) {
                         eraseBlurb(graphics);
                     }
-                    writeBlurb(w / 5, h * 3 / 7, tutText[21], graphics, "(click to continue)", 0);
+                    writeBlurb(h * 3 / 7, tutText[21], graphics, "(click to continue)", 0);
                     
                     graphics.tutorialArrow.attr("opacity", 1);
                     
@@ -1262,7 +1368,7 @@
                         if (!(typeof(graphics.tutorialMask) === 'undefined')) {
                             eraseBlurb(graphics);
                         }
-                        writeBlurb(w * 7 / 30, h * 2 / 7, tutText[22], graphics, "(click to continue)", 1000);
+                        writeBlurb(h * 2 / 7, tutText[22], graphics, "(click to continue)", 1000);
                         
                         // Ensure that this doesn't show again
                         clickOutEvent = 1;
@@ -1273,7 +1379,7 @@
                         if (!(typeof(graphics.tutorialMask) === 'undefined')) {
                             eraseBlurb(graphics);
                         }
-                        writeBlurb(w * 7 / 30, h * 2 / 7, tutText[23], graphics, "(click to continue)", 1000);
+                        writeBlurb(h * 2 / 7, tutText[23], graphics, "(click to continue)", 1000);
                         
                         // Ensure that this doesn't show again
                         clickInEvent = 1;
@@ -1283,7 +1389,7 @@
                     if (tutorialMode == 3) {
                         // If we're in tutorial mode, then proceed to next step while continuing gameplay.
 
-                        writeBlurb(w / 5, h * 7 / 20, tutText[tutorialMode], graphics, "(click to continue)", 1000);
+                        writeBlurb(h * 7 / 20, tutText[tutorialMode], graphics, "(click to continue)", 1000);
 
                         // Stop blinking yellow arrow
                         clearInterval(blinkVar);
@@ -1418,7 +1524,7 @@
 
                             
                             // Write tutorial text and proceed with tutorial
-                            writeBlurb(xPos, yPos, tutText[tutorialMode + 1], graphics, "(click to continue)", 1500);
+                            writeBlurb(yPos, tutText[tutorialMode + 1], graphics, "(click to continue)", 1500);
                             
                             waitFlag1500 = 1;
                             tutorialMode  = tutorialMode + 2;
@@ -1451,7 +1557,7 @@
                             }
                             
                             // Write tutorial text and proceed with tutorial
-                            writeBlurb(xPos, yPos, tutText[tutorialMode], graphics, "(click to continue)", 1500);
+                            writeBlurb(yPos, tutText[tutorialMode], graphics, "(click to continue)", 1500);
                             
                             waitFlag1500 = 1;
                             tutorialMode  = tutorialMode + 2;
@@ -1468,7 +1574,7 @@
                         // Continue tutorial
                         if (tutorialMode == 12) {
                             
-                            writeBlurb(w / 5, h * 2 / 7, tutText[tutorialMode], graphics, "(click to continue)", 1500);
+                            writeBlurb(h * 2 / 7, tutText[tutorialMode], graphics, "(click to continue)", 1500);
                             
                             // Proceed with the tutorial
                             tutorialMode = tutorialMode + 1;
