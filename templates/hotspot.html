@@ -15,6 +15,23 @@
 
     <link rel=stylesheet href="/static/css/gamestyles.css" type="text/css">
 	
+    <p>
+    <label for="nHeight"
+        style="display: inline-block; width: 240px; text-align: right">
+        height = <span id="nHeight-value">…</span>
+    </label>
+    <input type="range" min="1" max="280" id="nHeight">
+    </p>
+
+    <p>
+        <label for="nWidth"
+            style="display: inline-block; width: 240px; text-align: right">
+            width = <span id="nWidth-value">…</span>
+        </label>
+        <input type="range" min="1" max="400" id="nWidth">
+    </p>
+
+            
 	<body>
 		<script type="text/javascript">
 
@@ -60,6 +77,7 @@
         var numRounds_tut = 3;
         var waitFlag1500 = 0;
         var clickOutEvent = 0;
+        var clickInEvent = 0;
         var clickCenterEvent = 0;
         
         // tutorial blurbs
@@ -80,79 +98,145 @@
                       "the closer your move was to the hotspot."]);
                       
         // tutorialMode == 4
-        tutText.push(["Now let's see how the dots change on your next move.",
+        tutText.push(["Now place your next move by clicking with the bright green pointer.",
                       "Notice the white circle: you can place your move anywhere within it."]);
-                      
-        // tutorialMode == 5
-        tutText.push(["Note how the bright green pointer never moves beyond the white circle.",
-                    "You may place your move on the edge, but not beyond. Don't worry–the white circle",
-                      "will update after each move so that you can explore farther areas."]);
-                      
-        // tutorialMode == 6
-        tutText.push(["Make your next move by controlling the bright green pointer.",
-                      "As you click, watch the dots closely to see if anything changes!"]);
 
-        // tutorialMode == 7
+        // tutorialMode == 5
         tutText.push([""]);
 
-        // tutorialMode == 8
+        // tutorialMode == 6
         tutText.push(["Did you notice that some dots disappeared?  This means",
                       "that your 2nd move was farther away from the hotspot.",
                       "Use this information to get closer to the hotspot!"]);
                     
-        // tutorialMode == 9
+        // tutorialMode == 7
         tutText.push(["Did you notice that more dots appeared?  This means",
                       "that your 2nd move was closer to the hotspot. Keep this up!"]);
 
+        // tutorialMode == 8
+        tutText.push([""]);
+        
+        // tutorialMode == 9
+        tutText.push(["Did you notice that the dots decreased?",
+                      "You moved farther away from the hotspot."]);
+                      
         // tutorialMode == 10
+        tutText.push(["Did you notice that the dots increased?",
+                    "You moved closer to the hotspot! Keep going."]);
+                    
+        // tutorialMode == 11
         tutText.push([""]);
 
-        // tutorialMode == 11
-        tutText.push(["This is the end of the round. Each round ends after",
-                    "a small number of moves, even if you don't reach the hotspot.",
-                    "Some rounds may have fewer moves than others."]);
-
         // tutorialMode == 12
-        tutText.push(["Let's see how you performed this round."]);
-        
+        tutText.push(["This is the end of the game. Each game ends after",
+                    "a small number of moves, even if you don't reach the hotspot.",
+                    "Some games may have fewer moves than others."]);
+
         // tutorialMode == 13
-        tutText.push(["This red circle is where the hotspot was this round."]);
+        tutText.push(["Let's see how you performed in this game."]);
         
         // tutorialMode == 14
+        tutText.push(["This red circle is where the hotspot was for this game."]);
+        
+        // tutorialMode == 15
         tutText.push(["This green line is the path you took to get to it."]);
 
-        // tutorialMode == 15
+        // tutorialMode == 16
         tutText.push(["This percentage is the rating we gave you",
                       "based on how efficiently you approached the hotspot."]);
                       
-        // tutorialMode == 16
-        tutText.push(["Try your best! You may get bonus money for higher ratings,",
-                      "and a scoreboard will show how your performance compares",
-                      "to other workers, at the very end of the task!"]);
-                      
         // tutorialMode == 17
-        tutText.push(["Click again to move on to the next round!",
-                      "The hotspot will be reset to a new location.",
-                      "Complete a few rounds successfully on your own to exit the tutorial!"]);
-
+        tutText.push(["Try your best! You'll get more money for higher ratings,",
+                      "and you'll see how your overall performance compares",
+                      "to other workers, if you complete all the games!"]);
+                      
         // tutorialMode == 18
+        tutText.push(["Click again to move on to the next game!",
+                      "The hotspot will be reset to a new location.",
+                      "Complete a few games successfully on your own to exit the tutorial!"]);
+
+        // tutorialMode == 19
         tutText.push(["Great!  Receive $0.10 for concluding the tutorial.",
                       "Now play the hotspot game for real!"]);
                       
-        // tutorialMode == 19
+        // tutorialMode == 20
         tutText.push(["Maybe we need more practice before we start.",
                       "Let's try to the tutorial one more time!"]);
-
-
-        // Event triggered text (20 & 21)
+ 
+        // Event triggered text (21 & 22 & 23)
         tutText.push(["Remember that the first move always starts in the center!"]);
-        tutText.push(["Just a reminder: you can click outside the white circle,",
+        tutText.push(["Note: you can click outside the white circle for convenience,",
                       "but your move will be placed at the bright green pointer,",
-                      "which always stays inside the white circle."]);
-                      
+                      "which remains at the edge of the white circle."]);
+        tutText.push(["Note: to take a big step it's easiest to click beyond the white circle.",
+                      "That'll place your move right on the very edge of it."]);
+            
 
+        var quizText = new Array();
+        var quizAnswers = new Array();
+        var quizMode = 1; // Indicator of whether we are in quiz mode or not
+        var changedQuizMode = 0;
+        var answerKey = new Array();
+        var currQuizNum;
+        
+        // Complete the quiz.
+        // These aren't trick questions – should be easy if you paid attention!
+        quizPrompt = ["Complete the quiz successfully to play the bonus rounds.",
+                      "These aren't trick questions – should be easy if you paid attention!"];
+        
+        // For each new game, the location of the hotspot:
+        // (A) stays the same.
+        // (B) changes randomly every game.
+        
+        quizText.push({prompt : ["For each new game, the location of the hotspot:"],
+                      answers : ["stays the same.",
+                                 "changes randomly every game."]});
+        answerKey.push(1);
 
-			
+        // For each new game, the number of moves you're allowed:
+        // (A) changes randomly every game.
+        // (B) is always 6.
+        // (C) is always 4.
+        
+        quizText.push({prompt : ["For each new game, the number of moves you're allowed:"],
+                      answers : ["changes randomly every game.",
+                                 "is always 6.",
+                                 "is always 4."]})
+        answerKey.push(0);
+
+        // How do you know if you moved closer to the hotspot?
+        // (A) The game ends
+        // (B) Red dots increase.
+        // (C) Red dots decrease.
+        
+        quizText.push({prompt : ["How do you know if you moved closer to the hotspot?"],
+                      answers : ["The game ends.",
+                                 "Red dots increase.",
+                                 "Red dots decrease."]})
+        answerKey.push(1);
+        
+        // Where can your next move be placed?
+        // (A) Anywhere you want to click.
+        // (B) Only within the white circle.
+        // (C) Only outside the white circle.
+        
+        quizText.push({prompt : ["Where can your next move go?"],
+                      answers : ["Anywhere you want to click.",
+                                 "Only within the white circle.",
+                                 "Only outside the white circle."]})
+        answerKey.push(1);
+        
+        // What is the objective of the hotspot game?
+        // (A) To place your moves as close to the hotspot as possible.
+        // (B) Get rid of the red dots.
+        // (C) To reach the edge of the big black circle.
+
+        quizText.push({prompt : ["What is the objective of the hotspot game?"],
+                      answers : ["To place your moves as close to the hotspot as possible.",
+                                 "Get rid of the red dots.",
+                                 "To reach the edge of the big black circle."]})
+        answerKey.push(0);
+        
 		// Event variables to retrieve and record
 		var refpt = new Array(); 
 		var ringinfo = new Array();
@@ -179,7 +263,7 @@
 		var visupdated = true;
         var gameEnd = 0;
 
-        // Function for drawing  from a normal distribution
+        // Function for drawing samples from a normal distribution
 		Math.nrand = function() {
 			var x1, x2, rad, y1;
 			do {
@@ -205,7 +289,7 @@
             return Math.sum(vec) / vec.length;
         }
 
-		// Function for drawing from a circular uniform distribution
+		// Function for drawing samples from a circular uniform distribution
 		function circUnif(centX, centY, minR, boundR, numsamps) {
 			var allsamps = new Array();
 			var xsamp = 0;
@@ -646,7 +730,6 @@
             // Remove tutorial text so that we can draw a background underneath
             graphics.tutorialText.forEach(function(d) {d.remove()})
             
-            
             // Redraw tutorial text
             graphics.tutorialText = writeBlurbSubfun(x, y, blurbStrings, graphics.mainSvg, delay, 1);
 
@@ -710,24 +793,201 @@
                         .attr("y", y);
                 }
             }
-
-
             return tutorialText;
         }
+        
+        
+        // Helper function to draw a single quiz answer
+        function writeQuizLine(x, y, mainSvg, qAnswer) {
+            quizLine = mainSvg.append("text")
+                .attr("id", "quizAnswer")
+                .attr("font-size", tutorialFontSz + "px")
+                .attr("font-family", "sans-serif")
+                .attr("text-anchor", "left")
+                .attr("fill", "yellow")
+                .attr("x", x)
+                .attr("y", y)
+                .text(qAnswer)
+                .attr("transform", function(d) {return "translate(" + 0 + "," + tutorialFontSz + ")"})
+                .attr("opacity", 0)
+                .transition()
+                .delay(0)
+                .attr("opacity", 1);
+            return quizLine;
+        }
+        
 
+
+        
+        function displayQuiz(currQuiz, currQuizNum) {
+            // Location of quiz answer display
+            xx = currQuiz.answers.map(function() {return w / 3});
+            yy = currQuiz.answers.map(function(d, i) {return h * (14 + 2 * i) / 28});
+
+            // Add a letter identifier to make clear that it is multiple choice.
+            var ansLetters = currQuiz.answers.map(function(d, i)
+                                                  {return String.fromCharCode(65 + i)});
+            var answersText = ansLetters.map(function(d, i)
+                                             {return "(" + d + ") " + currQuiz.answers[i]});
+
+
+            combFunc = function (i) {return [xx, yy, answersText].map(function(d) {return d[i]})};
+            quizData = xx.map(function (d, i) {return combFunc(i)});
+
+            // Draw the quiz answer text (make function because we run this twice)
+            makeQText = function(quizData) {
+                return graphics.mainSvg.selectAll("text#quizAnswer")
+                .data(quizData)
+                .enter()
+                .append("text")
+                .attr("id", "quizAnswer")
+                .attr("font-size", tutorialFontSz + "px")
+                .attr("font-family", "sans-serif")
+                .attr("text-anchor", "left")
+                .attr("fill", "white")
+                .attr("x", function(d) {return d[0]})
+                .attr("y", function(d) {return d[1]})
+                .text(function(d) {return d[2]})
+                .attr("transform", function(d) {return "translate(" + 0 + "," + tutorialFontSz + ")"})
+                .attr("opacity", 1)
+                .on("mouseover", function(){ d3.select(this).style("fill", "green");})
+                .on("mouseout", function(){ d3.select(this).style("fill", "white");})
+                .on("click", function(d, i) {submitQuiz(i, currQuizNum)})
+            }
+            qText = makeQText(quizData);
+        
+
+            // Extract the box height and width data, and draw boxes
+            textWidHei = qText[0].map(function(d) {return [d.getBBox().width, d.getBBox().height]});
+            boxData = quizData.map(function(d, i) {return d.concat(textWidHei[i])});
+            
+            // Center the quiz answers in x
+            quizData = quizData.map(function(d, i)
+                                    {return [w / 2 - boxData[i][3] / 2].concat(d.slice(1))})
+            boxData = quizData.map(function(d, i) {return d.concat(textWidHei[i])});
+
+            lineSeg = d3.svg.line().x(function (d) {return d[0];})
+            .y(function(d) {return d[1];});
+            lineBox = function(cornerX, cornerY, maxXLen, maxYLen)
+            {return lineSeg([[cornerX, cornerY],
+                                [cornerX + maxXLen, cornerY],
+                                [cornerX + maxXLen, cornerY + maxYLen],
+                                [cornerX, cornerY + maxYLen],
+                                [cornerX, cornerY - 1.5]])}
+
+            // Draw boxes around the quiz answers
+            qTextBox = graphics.mainSvg.selectAll("path#quizAnsBox")
+                .data(boxData)
+                .enter()
+                .append("svg:path")
+                .attr("id", "quizAnsBox")
+                .attr("stroke", "yellow")
+                .attr("fill", "rgb(70, 70, 70)")
+                .attr("stroke-width", 3)
+                .attr("opacity", 0.65)
+                .attr("d", function(d) {return lineBox(d[0] - 15, d[1] - tutorialFontSz / 2, d[3] + 30, d[4] + 20)});
+
+            qText.remove()
+
+            qText = makeQText(quizData);
+        
+        }
+
+        function submitQuiz(quizVal, currQuizNum) {
+            console.log(quizVal);
+            console.log(answerKey[currQuizNum]);
+            
+            if (quizVal == answerKey[currQuizNum]) {
+                console.log("CORRECT");
+                
+                // Erase previous junk
+                eraseBlurb(graphics);
+                graphics.mainSvg.selectAll("#quizAnswer").remove()
+                graphics.mainSvg.selectAll("#quizAnsBox").remove()
+                
+                xPos = w * 22 / 48;
+                yPos = h * 2 / 7;
+                writeBlurb(xPos, yPos, ["Correct!"], graphics, "(click to continue)", 0);
+                
+                // Move onto next question
+                changedQuizMode = 0;
+                quizMode++;
+                
+                
+            } else {
+                console.log("INCORRECT");
+                
+                // Record identify of worker who stopped after tutorial.
+                // End HIT?
+                endText = ["Thank you for playing! You earned a total of $" + moneyCount.toFixed(2) + "."];
+                eraseBlurb(graphics);
+                xPos = w * 11 / 48;
+                yPos = h * 2 / 7;
+                writeBlurb(xPos, yPos, endText, graphics, "(click to finish)", 0);
+//                psiTurk.completeHIT();
+            }
+        }
 
 		function rescale() {
 			console.log("rescale");
 		}
-		
+        
+        // This generic mousedown function routes to different mousedown funcs
         function mousedown() {
-            console.log("mousedown");
+            if (quizMode > 0) {
+                mousedownQuiz(d3.mouse(this))
+            } else {
+                mousedownGame(d3.mouse(this))
+            }
+        }
+        
+        // Mousedown function for quiz mode
+        function mousedownQuiz(mousePos) {
+            if (quizMode == 1) {
+                eraseBlurb(graphics);
+                writeBlurb(w / 5, h * 3 / 7, quizPrompt, graphics,
+                           "(click to continue)", 0);
+                quizMode++;
+            }else if (changedQuizMode == 0) {
+                eraseBlurb(graphics);
+                
+                var currQuizNum = quizMode - 2;
+                
+                if (currQuizNum == quizText.length) {
+                    // Start extended bonus rounds
+                    eraseBlurb(graphics);
+                    bonusRoundText = ["You successfully completed the quiz!!!",
+                                      "Move onto the extended bonus round.",
+                                      "You get paid for each hotspot game played",
+                                      "and the better you do, the more you earn."];
+                    writeBlurb(w / 2 - 160, h * 3 / 7, bonusRoundText, graphics,
+                               "(click to continue)", 0);
+                    quizMode = 0;
+                } else {
+                    // Progress to the next quiz question.
+                    var currQuiz = quizText[currQuizNum];
+                    
+                    // Draw question text
+                    xCent = w / 2 - currQuiz.prompt[0].length / 2 * tutorialFontSz / 2;
+                    writeBlurb(xCent, h * 3 / 7, currQuiz.prompt, graphics,
+                               "(click one answer)", 0);
+                   
+                   // Draw possible answers
+                   displayQuiz(currQuiz, currQuizNum);
+                   
+                   changedQuizMode = 1;
+                }
+            }
+        }
+        
+        // Mousedown function for game mode
+        function mousedownGame(mousePos) {
 			var currtime = new Date();
 
 			if (currtime.getTime() - lastupdatetime > wait_time
                 & (!waitFlag1500 | (currtime.getTime() - lastupdatetime > 1500)) &
                 (gameEnd == 0)) {
-				distfromarea = Math.sqrt(Math.pow(d3.mouse(this)[0] - graphics.steparea1.attr("cx"),2) + Math.pow(d3.mouse(this)[1] - graphics.steparea1.attr("cy"),2));
+				distfromarea = Math.sqrt(Math.pow(mousePos[0] - graphics.steparea1.attr("cx"),2) + Math.pow(mousePos[1] - graphics.steparea1.attr("cy"),2));
                 
                 // Reset wait flags
                 waitFlag1500 = 0;
@@ -735,15 +995,15 @@
                 if (endblock) {
                     // The round already ended
                     
-                    if (tutorialMode == 12 | tutorialMode == 13 | tutorialMode == 14 | tutorialMode == 15 | tutorialMode == 16 | tutorialMode == 17) {
+                    if (tutorialMode == 13 | tutorialMode == 14 | tutorialMode == 15 | tutorialMode == 16 | tutorialMode == 17 | tutorialMode == 18) {
                         // Erase previous text
                         eraseBlurb(graphics);
                         
                         // Write the tutorial text
-                        if (tutorialMode == 12) {
+                        if (tutorialMode == 13) {
                             xPos = w * 9 / 32;
                             yPos = h * 2 / 7;
-                        }else if (tutorialMode == 13) {
+                        }else if (tutorialMode == 14) {
                             xPos = w * 15 / 64;
                             yPos = h * 2 / 7;
                             
@@ -758,7 +1018,7 @@
                             blinkVar = setInterval(function() {blinkArrow(graphics.tutorialArrow)}, 800);
 
                             placeArrow(refpt[0][0], refpt[0][1]);
-                        }else if (tutorialMode == 14) {
+                        }else if (tutorialMode == 15) {
                             xPos = w / 4;
                             yPos = h * 2 / 7;
                             
@@ -780,7 +1040,7 @@
                             blinkVar = setInterval(function() {blinkArrow(graphics.tutorialArrow)}, 800);
                             
                             placeArrow(pathCenter[0], pathCenter[1]);
-                        }else if (tutorialMode == 15) {
+                        }else if (tutorialMode == 16) {
                             xPos = w * 7 / 30;
                             yPos = h * 2 / 7;
                             
@@ -795,7 +1055,7 @@
                             placeArrow(endpt[1][0] + 6 + 0.25 * (endpt[1][0] - endpt[2][0]),
                                        endpt[1][1] - 12 + 0.25 * (endpt[1][1] - endpt[2][1]));
                             
-                        }else if (tutorialMode == 16) {
+                        }else if (tutorialMode == 17) {
                             xPos = w / 5;
                             yPos = h * 2 / 7;
                             
@@ -805,7 +1065,7 @@
                             graphics.tutorialArrow.transition()
                             .delay(260)
                             .attr("opacity", 0);
-                        }else if (tutorialMode == 17) {
+                        }else if (tutorialMode == 18) {
                             xPos = w * 7 / 40;
                             yPos = h * 2 / 7;
                         }
@@ -845,7 +1105,7 @@
                         eraseBlurb(graphics);
                         tutorialMode = 1;
                     }else{
-                        if (tutorialMode == 18) {
+                        if (tutorialMode == 19) {
                             // Erase previous text
                             eraseBlurb(graphics);
                             
@@ -854,13 +1114,13 @@
                             numOK = finalscore_rec.map(function(a) {return a > 0;}).reduce(function(a, b) {return a + b;});
                             if (numOK > 1) {
                                 tutorialMode = -1;
-                                writeBlurb(w / 4, h * 3 / 7, tutText[18], graphics, "(click to continue)", 0);
+                                writeBlurb(w / 4, h * 3 / 7, tutText[19], graphics, "(click to continue)", 0);
                                 graphics.userDisp[0].text("")
                             }else {
                                 // If failed tutorial, redo tutorial.
                                 tutorialMode = -2;
                                 finalscore_rec = finalscore_rec.slice(0, 0);
-                                writeBlurb(w / 4, h * 3 / 7, tutText[19], graphics, "(click to continue)", 0);
+                                writeBlurb(w / 4, h * 3 / 7, tutText[20], graphics, "(click to continue)", 0);
                             }
                         }else {
 
@@ -893,8 +1153,8 @@
                         }
                     }
                     
-                }else if (tutorialMode == 1 | tutorialMode == 4 | tutorialMode == 5 | tutorialMode == 6 | tutorialMode == 7
-                          | tutorialMode == 10) {
+                }else if (tutorialMode == 1 | tutorialMode == 4 | tutorialMode == 5
+                          | tutorialMode == 8 | tutorialMode == 11) {
                     // Continue tutorial mode without continuing gameplay.
 
                     // Erase previous text
@@ -904,7 +1164,7 @@
                         
                         writeBlurb(w / 6, h * 4 / 10, tutText[tutorialMode], graphics, "(click to continue)", 0);
                         
-                    }else if (tutorialMode == 4 | tutorialMode == 5 | tutorialMode == 6) {
+                    }else if (tutorialMode == 4) {
                         
                         // Clear the previous blinking
                         clearInterval(blinkVar);
@@ -913,16 +1173,8 @@
                         blinkVar = setInterval(function() {blinkArrow(graphics.steparea1)}, 800);
                         
                         // Write the tutorial text
-                        if (tutorialMode == 4) {
-                            xPos = w * 1 / 8;
-                            yPos = h * 7 / 20;
-                        }else if (tutorialMode == 5) {
-                            xPos = w * 1 / 12;
-                            yPos = h * 7 / 20;
-                        }else if (tutorialMode == 6) {
-                            xPos = w * 1 / 6;
-                            yPos = h * 7 / 20;
-                        }
+                        xPos = w * 1 / 8;
+                        yPos = h * 7 / 20;
                         writeBlurb(xPos, yPos, tutText[tutorialMode], graphics, "(click to continue)", 0);
                         
                     }
@@ -939,6 +1191,11 @@
                     
                     eraseBlurb(graphics);
                     clickOutEvent = 2;
+
+                }else if (clickInEvent == 1) {
+                    
+                    eraseBlurb(graphics);
+                    clickInEvent = 2;
 
                 }else if (tutorialMode == 2) {
 
@@ -961,7 +1218,7 @@
                     if (!(typeof(graphics.tutorialMask) === 'undefined')) {
                         eraseBlurb(graphics);
                     }
-                    writeBlurb(w / 5, h * 3 / 7, tutText[20], graphics, "(click to continue)", 0);
+                    writeBlurb(w / 5, h * 3 / 7, tutText[21], graphics, "(click to continue)", 0);
                     
                     graphics.tutorialArrow.attr("opacity", 1);
                     
@@ -1000,15 +1257,26 @@
                     }
                     
                     if (distfromarea > graphics.steparea1.attr("r") & !clickOutEvent
-                        & (tutorialMode == 0 | tutorialMode > 15)) {
+                        & (tutorialMode == 0 | tutorialMode > 16)) {
                         
                         if (!(typeof(graphics.tutorialMask) === 'undefined')) {
                             eraseBlurb(graphics);
                         }
-                        writeBlurb(w * 7 / 30, h * 2 / 7, tutText[21], graphics, "(click to continue)", 1000);
+                        writeBlurb(w * 7 / 30, h * 2 / 7, tutText[22], graphics, "(click to continue)", 1000);
                         
                         // Ensure that this doesn't show again
                         clickOutEvent = 1;
+                    }
+                    if (distfromarea <= graphics.steparea1.attr("r") & !clickInEvent
+                        & trialnum > 1 & (tutorialMode == 0 | tutorialMode > 16)) {
+                        
+                        if (!(typeof(graphics.tutorialMask) === 'undefined')) {
+                            eraseBlurb(graphics);
+                        }
+                        writeBlurb(w * 7 / 30, h * 2 / 7, tutText[23], graphics, "(click to continue)", 1000);
+                        
+                        // Ensure that this doesn't show again
+                        clickInEvent = 1;
                     }
                     
                     // Tutorial section
@@ -1135,15 +1403,25 @@
                         graphics.newdots = graphics.mainSvg.selectAll(".score");
                         
                         // If in tutorial mode, proceed with tutorial.
-                        if (tutorialMode == 8) {
+                        if (tutorialMode == 6 | tutorialMode == 9) {
                             // Clear the previous blinking
                             clearInterval(blinkVar);
                             
+                            // Position the tutorial text
+                            if (tutorialMode == 6) {
+                                xPos = w / 5;
+                                yPos = h * 7 / 20;
+                            }else {
+                                xPos = 7 * w / 24;
+                                yPos = h * 7 / 20;
+                            }
+
+                            
                             // Write tutorial text and proceed with tutorial
-                            writeBlurb(w / 5, h * 7 / 20, tutText[tutorialMode + 1], graphics, "(click to continue)", 1500);
+                            writeBlurb(xPos, yPos, tutText[tutorialMode + 1], graphics, "(click to continue)", 1500);
                             
                             waitFlag1500 = 1;
-                            tutorialMode  = 10;
+                            tutorialMode  = tutorialMode + 2;
                         }
 
                     }else {
@@ -1159,15 +1437,24 @@
                             
                             
                         // If in tutorial mode, proceed with tutorial.
-                        if (tutorialMode == 8) {
+                        if (tutorialMode == 6 | tutorialMode == 9) {
                             // Clear the previous blinking
                             clearInterval(blinkVar);
                             
+                            // Position the tutorial text
+                            if (tutorialMode == 6) {
+                                xPos = w / 5;
+                                yPos = h * 7 / 20;
+                            }else {
+                                xPos = 7 * w / 24;
+                                yPos = h * 7 / 20;
+                            }
+                            
                             // Write tutorial text and proceed with tutorial
-                            writeBlurb(w / 5, h * 7 / 20, tutText[tutorialMode], graphics, "(click to continue)", 1500);
+                            writeBlurb(xPos, yPos, tutText[tutorialMode], graphics, "(click to continue)", 1500);
                             
                             waitFlag1500 = 1;
-                            tutorialMode  = 10;
+                            tutorialMode  = tutorialMode + 2;
                         }
                     }
                     setTimeout(function(){play_multi_sound('click3')}, dotDelay);
@@ -1179,7 +1466,7 @@
                     if (trialnum > totaltrials) {
 
                         // Continue tutorial
-                        if (tutorialMode == 11) {
+                        if (tutorialMode == 12) {
                             
                             writeBlurb(w / 5, h * 2 / 7, tutText[tutorialMode], graphics, "(click to continue)", 1500);
                             
@@ -1322,7 +1609,7 @@
                     }
                 }
               
-            currloc = d3.mouse(this);
+            currloc = mousePos;
             updatecursor(currloc, wait_time, trans_time);
             visupdated = false;
             console.log(visupdated);
