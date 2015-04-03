@@ -74,8 +74,8 @@
 //        var tutorialMode = 0;
         var numTutTextLines = 7;  // Number of text lines allowed in blurb
         var blinkVar = 0;
-        var numRounds_tut = 6;
-        var tutCompleteThresh = 4;
+        var numRounds_tut = 7;
+        var tutCompleteThresh = 5;
         var waitFlag1500 = 0;
         var clickOutEvent = 0;
         var clickInEvent = 0;
@@ -649,7 +649,7 @@
                 
                 exitButton.append("text")
                 .attr("id", "buttonText")
-                .text("Exit game & cash out")
+                .text("Exit game & pay me")
                 .attr("text-anchor", "middle")
                 .attr("font-size", statfntsz + "px")
                 .attr("x", function(d) {return d[0]})
@@ -1211,8 +1211,8 @@
                             
                             tutorialMode = tutorialMode + 1;
                         }else if (finalscore_rec.length >= numRounds_tut & tutorialMode > 0) {
-                            numOK = finalscore_rec.map(function(a) {return a > 0;}).reduce(function(a, b) {return a + b;});
-                            if (numOK > tutCompleteThresh) {
+                            numOK = finalscore_rec.slice(1).map(function(a) {return a > 0;}).reduce(function(a, b) {return a + b;})
+                            if (numOK >= tutCompleteThresh) {
                                 // End tutorial
                                 tutorialMode = -1;
                                 writeBlurb(h * 3 / 7, tutText[19], graphics, "(click to continue)", 0);
@@ -1629,7 +1629,11 @@
                         // Payoff for current score
                         if (tutorialMode == 0) {
                             if (finalScore > 0.9) {
+                                currentEarned = 0.06;
+                            }else if (finalScore > 0.8) {
                                 currentEarned = 0.05;
+                            }else if (finalScore > 0.7) {
+                                currentEarned = 0.04;
                             }else if (finalScore > 0.6) {
                                 currentEarned = 0.03;
                             }else if (finalScore > 0.3) {
